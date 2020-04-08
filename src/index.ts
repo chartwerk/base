@@ -13,7 +13,7 @@ const DEFAULT_TICK_COUNT = 4;
 const MAX_GRID_COUNT = 24;
 const SECONDS_IN_DAY = 24 * 60 * 60;
 
-abstract class ChartwerkBase {
+export abstract class ChartwerkBase {
   protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
   protected _chartContainer?: d3.Selection<d3.BaseType, unknown, null, undefined>;
   protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -307,8 +307,3 @@ abstract class ChartwerkBase {
     return maxValue + this._options.confidence;
   }
 }
-
-export {
-  ChartwerkBase,
-  Margin, TimeSerie, Options, TickOrientation
-};

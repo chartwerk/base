@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
     "target": "es5",
     "rootDir": "./src",
     "module": "esnext",
-    "declaration": false,
+    "declaration": true,
     "allowSyntheticDefaultImports": true,
     "inlineSourceMap": false,
     "sourceMap": true,

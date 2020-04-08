@@ -4,9 +4,28 @@ function resolve(dir) {
   return path.join(__dirname, '..', dir)
 }
 
+
+function DtsBundlePlugin() { }
+DtsBundlePlugin.prototype.apply = function (compiler) {
+  compiler.plugin('done', function () {
+    var dts = require('dts-bundle');
+
+    dts.bundle({
+      name: 'ChartwerkBase',
+      main: 'src/index.d.ts',
+      out: '../dist/index.d.ts',
+      removeSource: true,
+      outputAsModuleFolder: true // to use npm in-package typings
+    });
+  });
+};
+
 module.exports = {
   context: resolve('src'),
   entry: './index.ts',
+  plugins: [
+    new DtsBundlePlugin()
+  ],
   module: {
     rules: [
       {
@@ -15,7 +34,7 @@ module.exports = {
         exclude: /node_modules/
       },
       {
-        test: /\.css$/i,
+        test: /\.css$/,
         use: ['style-loader', 'css-loader'],
         exclude: /node_modules/
       }
@@ -27,6 +46,7 @@ module.exports = {
   output: {
     filename: 'index.js',
     path: resolve('dist'),
-    libraryTarget: 'umd'
+    libraryTarget: 'umd',
+    umdNamedDefine: true
   }
 };
