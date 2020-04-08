@@ -4,7 +4,6 @@
 
 import * as d3 from 'd3';
 
-import './css/style.css';
 export abstract class ChartwerkBase {
     protected _series: TimeSerie[];
     protected _options: Options;

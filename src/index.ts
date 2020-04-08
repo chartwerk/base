@@ -1,4 +1,4 @@
-import './css/style.css';
+import styles from './css/style.css';
 
 import { Margin, TimeSerie, Options, TickOrientation } from './types';
 import { getRandomColor } from './utils';
@@ -20,6 +20,8 @@ export abstract class ChartwerkBase {
   protected _brush?: d3.BrushBehavior<unknown>;
 
   constructor(el: HTMLElement, protected _series: TimeSerie[] = [], protected _options: Options = {}) {
+    styles.use();
+
     if(this._options.colors === undefined) {
       this._options.colors = this._series.map(getRandomColor);
     }
