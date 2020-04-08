@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Chartwerk base",
   "main": "dist/index.js",
-  "types": "index.d.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "webpack --config build/webpack.prod.conf.js",
     "dev": "webpack --config build/webpack.dev.conf.js",
