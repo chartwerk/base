@@ -3,6 +3,7 @@ import styles from './css/style.css';
 import { Margin, TimeSerie, Options, TickOrientation } from './types';
 import { getRandomColor } from './utils';
 
+// we import only d3 types here
 import * as d3 from 'd3';
 import * as _ from 'lodash';
 
@@ -25,6 +26,7 @@ export abstract class ChartwerkBase {
     protected _series: TimeSerie[] = [],
     protected _options: Options = {}
   ) {
+    // TODO: test if it's necessary
     styles.use();
 
     if(this._options.colors === undefined) {
