@@ -4,7 +4,6 @@ import { Margin, TimeSerie, Options, TickOrientation } from './types';
 import { getRandomColor } from './utils';
 
 import * as d3 from 'd3';
-
 import * as _ from 'lodash';
 
 
@@ -19,7 +18,13 @@ export abstract class ChartwerkBase {
   protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected _brush?: d3.BrushBehavior<unknown>;
 
-  constructor(el: HTMLElement, protected _series: TimeSerie[] = [], protected _options: Options = {}) {
+  constructor(
+    // maybe it's not the best idea
+    protected _d3: typeof d3,
+    el: HTMLElement,
+    protected _series: TimeSerie[] = [],
+    protected _options: Options = {}
+  ) {
     styles.use();
 
     if(this._options.colors === undefined) {
@@ -37,7 +42,7 @@ export abstract class ChartwerkBase {
         Current: colors count (${colorsCount}) < series count (${seriesCount})
       `);
     }
-    this._d3Node = d3.select(el);
+    this._d3Node = this._d3.select(el);
 
     this.render();
   }
@@ -74,7 +79,7 @@ export abstract class ChartwerkBase {
       .attr('transform', `translate(0,${this.height})`)
       .attr('class', 'grid')
       .call(
-        d3.axisBottom(this.xScale).ticks(this.ticksCount(2))
+        this._d3.axisBottom(this.xScale).ticks(this.ticksCount(2))
           .tickSize(-this.height)
           .tickFormat(() => '')
       );
@@ -83,7 +88,7 @@ export abstract class ChartwerkBase {
       .append('g')
       .attr('class', 'grid')
       .call(
-        d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
           .tickSize(-this.width)
           .tickFormat(() => '')
       );
@@ -98,7 +103,7 @@ export abstract class ChartwerkBase {
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
       .call(
-        d3.axisBottom(this.xScale).ticks(this.ticksCount(1))
+        this._d3.axisBottom(this.xScale).ticks(this.ticksCount(1))
           .tickSize(2)
           .tickFormat(this.timeFormat)
       );
@@ -111,7 +116,7 @@ export abstract class ChartwerkBase {
       .append('g')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
-        d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
           .tickSize(2)
       );
   }
@@ -151,13 +156,13 @@ export abstract class ChartwerkBase {
       this.minValue === undefined ||
       this.maxValue === undefined
     ) {
-      return d3.scaleLinear()
+      return this._d3.scaleLinear()
         // TODO: use timerange from options
         .domain([0, 1])
         .range([0, this.width]);
     }
     // TODO: add timezone (utc / browser) to options and use it
-    return d3.scaleTime()
+    return this._d3.scaleTime()
       .domain([
         new Date(_.first(this._series[0].datapoints)[1]),
         new Date(_.last(this._series[0].datapoints)[1])
@@ -166,7 +171,7 @@ export abstract class ChartwerkBase {
   }
 
   get xTimeScale(): d3.ScaleTime<number, number> {
-    return d3.scaleTime()
+    return this._d3.scaleTime()
       .domain([
         new Date(_.first(this._series[0].datapoints)[1]),
         new Date(_.last(this._series[0].datapoints)[1])
@@ -179,13 +184,13 @@ export abstract class ChartwerkBase {
       this.minValue === undefined ||
       this.maxValue === undefined
     ) {
-      return d3.scaleLinear()
+      return this._d3.scaleLinear()
         // TODO: why [100, 0]?
         .domain([100, 0])
         .range([0, this.height]);
     }
 
-    return d3.scaleLinear()
+    return this._d3.scaleLinear()
       .domain([this.maxValue, this.minValue])
       .range([0, this.height]);
   }
@@ -195,7 +200,7 @@ export abstract class ChartwerkBase {
       if(this.daysCount > 1 * scaleFactor) {
         return MAX_GRID_COUNT * scaleFactor;
       } else {
-        return d3.timeMinute.every(this._options.timeInterval);
+        return this._d3.timeMinute.every(this._options.timeInterval);
       }
     }
     return 4;
@@ -220,7 +225,7 @@ export abstract class ChartwerkBase {
 
   get timeFormat(): (date: Date) => string {
     if(this._options.tickFormat !== undefined && this._options.tickFormat.xAxis !== undefined) {
-      return d3.timeFormat(this._options.tickFormat.xAxis);
+      return this._d3.timeFormat(this._options.tickFormat.xAxis);
     }
     return (() => '');
   }
