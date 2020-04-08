@@ -1,6 +1,6 @@
 {
   "name": "@chartwerk/base",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Chartwerk base",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
