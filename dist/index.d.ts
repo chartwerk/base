@@ -9,7 +9,7 @@ export abstract class ChartwerkBase {
     protected _series: TimeSerie[];
     protected _options: Options;
     protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
-    protected _chartContainer?: d3.Selection<d3.BaseType, unknown, null, undefined>;
+    protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected _brush?: d3.BrushBehavior<unknown>;
     constructor(_d3: typeof d3, el: HTMLElement, _series?: TimeSerie[], _options?: Options);
