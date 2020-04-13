@@ -1,5 +1,5 @@
 export type Margin = { top: number, right: number, bottom: number, left: number };
-export type TimeSerie = { target: string, alias: string, datapoints: [number, number][] };
+export type TimeSerie = { target: string, alias: string, datapoints: [number, number][], visible: boolean };
 // TODO: move some options to line-chart
 export type Options = {
   margin?: Margin;
@@ -9,7 +9,8 @@ export type Options = {
     zoomIn: (range: [number, number]) => void,
     zoomOut: (center: number) => void,
     mouseMove: (evt: any) => void,
-    mouseOut: () => void
+    mouseOut: () => void,
+    onLegendClick: (idx: number) => void
   };
   timeInterval?: number;
   tickFormat?: {

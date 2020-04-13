@@ -57,6 +57,7 @@ export abstract class ChartwerkBase {
 
     this._renderMetrics();
 
+    this._renderLegend();
     this._renderYLabel();
     this._renderXLabel();
   }
@@ -123,6 +124,43 @@ export abstract class ChartwerkBase {
       );
   }
 
+  _renderLegend(): void {
+    if(this._series.length > 0) {
+      let legendRow = this._chartContainer
+        .append('g')
+        .attr('class', 'legend-row');
+      for(let idx = 0; idx < this._series.length; idx++) {
+        let node = legendRow.selectAll('text').node();
+        let rowWidth = 0;
+        if(node !== null) {
+          // @ts-ignore
+          rowWidth = legendRow.node().getBBox().width + 25;
+        }
+
+        const isChecked = this._series[idx].visible !== false;
+        legendRow.append('foreignObject')
+          .attr('x', rowWidth)
+          .attr('y', this.height + this.margin.top + this.margin.bottom - 37)
+          .attr('width', 13)
+          .attr('height', 13)
+          .append('xhtml:body')
+          .html(`<form><input type=checkbox id=check-${idx} ${isChecked? 'checked' : ''} /></form>`)
+          .on('click', () => {
+            this._options.eventsCallbacks.onLegendClick(idx);
+          });
+
+        legendRow.append('text')
+          .attr('x', rowWidth + 20)
+          .attr('y', this.height + this.margin.top + this.margin.bottom - 25)
+          .attr('class', `metric-legend-${idx}`)
+          .style('font-size', '12px')
+          .style('fill', this._options.colors[idx])
+          // @ts-ignore
+          .text(this._series[idx].target);
+      }
+    }
+  }
+
   _renderYLabel(): void {
     if(this._options.labelFormat === undefined || this._options.labelFormat.yAxis === undefined) {
       return;
@@ -146,7 +184,7 @@ export abstract class ChartwerkBase {
     this._chartContainer.append('text')
       .attr('class', 'x-axis-label')
       .attr('x', this.width / 2)
-      .attr('y', this.height + this.margin.top + this.margin.bottom - 25)
+      .attr('y', this.height + this.margin.top + this.margin.bottom - 45)
       .style('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', 'currentColor')
@@ -265,12 +303,15 @@ export abstract class ChartwerkBase {
       }
     }
     if(this._options.labelFormat !== undefined) {
-      if(this._options.labelFormat.xAxis !== undefined) {
+      if(this._options.labelFormat.xAxis !== undefined && this._options.labelFormat.xAxis.length > 0) {
         optionalMargin.bottom += 20;
       }
-      if (this._options.labelFormat.yAxis !== undefined) {
+      if(this._options.labelFormat.yAxis !== undefined && this._options.labelFormat.yAxis.length > 0) {
         optionalMargin.left += 20;
       }
+    }
+    if(this._series.length > 0) {
+      optionalMargin.bottom += 25;
     }
     return optionalMargin;
   }
