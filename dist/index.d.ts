@@ -19,6 +19,7 @@ export abstract class ChartwerkBase {
     _renderGrid(): void;
     _renderXAxis(): void;
     _renderYAxis(): void;
+    _renderLegend(): void;
     _renderYLabel(): void;
     _renderXLabel(): void;
     get xScale(): d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>;
@@ -47,6 +48,7 @@ export type TimeSerie = {
     target: string;
     alias: string;
     datapoints: [number, number][];
+    visible: boolean;
 };
 export type Options = {
     margin?: Margin;
@@ -57,6 +59,7 @@ export type Options = {
         zoomOut: (center: number) => void;
         mouseMove: (evt: any) => void;
         mouseOut: () => void;
+        onLegendClick: (idx: number) => void;
     };
     timeInterval?: number;
     tickFormat?: {
