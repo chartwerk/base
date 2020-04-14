@@ -143,8 +143,7 @@ export abstract class ChartwerkBase {
           .attr('y', this.height + this.margin.top + this.margin.bottom - 37)
           .attr('width', 13)
           .attr('height', 13)
-          .append('xhtml:body')
-          .html(`<form><input type=checkbox id=check-${idx} ${isChecked? 'checked' : ''} /></form>`)
+          .html(`<form><input type=checkbox ${isChecked? 'checked' : ''} /></form>`)
           .on('click', () => {
             this._options.eventsCallbacks.onLegendClick(idx);
           });
