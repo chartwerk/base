@@ -332,9 +332,11 @@ export abstract class ChartwerkBase {
 
   get minValue(): number | undefined {
     const minValue = _.min(
-      this._series.map(
-        serie => _.minBy<number[]>(serie.datapoints, dp => dp[0])[0]
-      )
+      this._series
+        .filter(serie => serie.visible !== false)
+        .map(
+          serie => _.minBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
     );
 
     if(minValue === undefined) {
@@ -345,9 +347,11 @@ export abstract class ChartwerkBase {
 
   get maxValue(): number | undefined {
     const maxValue = _.max(
-      this._series.map(
-        serie => _.maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
-      )
+      this._series
+        .filter(serie => serie.visible !== false)
+        .map(
+          serie => _.maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
     );
 
     if(maxValue === undefined) {
