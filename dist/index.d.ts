@@ -36,6 +36,8 @@ export abstract class ChartwerkBase {
     get margin(): Margin;
     get minValue(): number | undefined;
     get maxValue(): number | undefined;
+    formatedBound(alias: string, target: string): string;
+    get seriesTargetsWithBounds(): any[];
 }
 
 export type Margin = {
@@ -69,6 +71,10 @@ export type Options = {
     labelFormat?: {
         xAxis?: string;
         yAxis?: string;
+    };
+    bounds?: {
+        upper: string;
+        lower: string;
     };
 };
 export enum TickOrientation {

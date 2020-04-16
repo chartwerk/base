@@ -130,6 +130,9 @@ export abstract class ChartwerkBase {
         .append('g')
         .attr('class', 'legend-row');
       for(let idx = 0; idx < this._series.length; idx++) {
+        if(_.includes(this.seriesTargetsWithBounds, this._series[idx].target)) {
+          continue;
+        }
         let node = legendRow.selectAll('text').node();
         let rowWidth = 0;
         if(node !== null) {
@@ -358,5 +361,19 @@ export abstract class ChartwerkBase {
       return undefined;
     }
     return maxValue + this._options.confidence;
+  }
+
+  formatedBound(alias: string, target: string): string {
+    const confidenceMetric = _.replace(alias, '$__metric_name', target);
+    return confidenceMetric;
+  }
+
+  get seriesTargetsWithBounds(): any[] {
+    let series = [];
+    this._series.forEach(serie => {
+      series.push(this.formatedBound(this._options.bounds.upper, serie.target));
+      series.push(this.formatedBound(this._options.bounds.lower, serie.target));
+    });
+    return series;
   }
 }
