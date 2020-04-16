@@ -21,6 +21,10 @@ export type Options = {
     xAxis?: string;
     yAxis?: string;
   };
+  bounds?: {
+    upper: string;
+    lower: string;
+  };
 };
 export enum TickOrientation {
   VERTICAL = 'vertical',
