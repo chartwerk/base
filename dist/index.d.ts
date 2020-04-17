@@ -38,6 +38,8 @@ export abstract class ChartwerkBase {
     get maxValue(): number | undefined;
     formatedBound(alias: string, target: string): string;
     get seriesTargetsWithBounds(): any[];
+    get visibleSeries(): any[];
+    isOutOfChart(): boolean;
 }
 
 export type Margin = {
