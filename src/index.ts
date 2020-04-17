@@ -376,4 +376,21 @@ export abstract class ChartwerkBase {
     });
     return series;
   }
+
+  get visibleSeries(): any[] {
+    return this._series.filter(serie => serie.visible !== false);
+  }
+
+  isOutOfChart(): boolean {
+    const event = this._d3.mouse(this._chartContainer.node());
+    const eventX = event[0];
+    const eventY = event[1];
+    if(
+      eventY > this.height || eventY < 0 ||
+      eventX > this.width || eventX < 0
+    ) {
+      return true;
+    }
+    return false;
+  }
 }
