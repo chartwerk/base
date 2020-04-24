@@ -56,6 +56,8 @@ export abstract class ChartwerkBase {
     this._renderGrid();
 
     this._renderMetrics();
+    this._renderCrosshair();
+    this._useBrush();
 
     this._renderLegend();
     this._renderYLabel();
@@ -63,6 +65,11 @@ export abstract class ChartwerkBase {
   }
 
   abstract _renderMetrics(): void;
+  abstract onMouseOver(): void;
+  abstract onMouseOut(): void;
+  abstract onMouseMove(): void;
+  public abstract renderSharedCrosshair(timestamp: number): void;
+  public abstract hideSharedCrosshair(): void;
 
   _renderSvg(): void {
     this._d3Node.select('svg').remove();
@@ -122,6 +129,56 @@ export abstract class ChartwerkBase {
         this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
           .tickSize(2)
       );
+  }
+
+  _renderCrosshair(): void {
+    this._crosshair = this._chartContainer.append('g')
+      .style('display', 'none');
+
+    this._crosshair.append('line')
+      .attr('class', 'crosshair-line')
+      .attr('id', 'crosshair-line-x')
+      .attr('fill', 'red')
+      .attr('stroke', 'red')
+      .attr('stroke-width', '1px');
+
+    for(let i = 0; i < this._series.length; i++) {
+      this._crosshair.append('circle')
+        .attr('class', 'crosshair-circle')
+        .attr('id', `crosshair-circle-${i}`)
+        .attr('r', 2)
+        .style('fill', 'none')
+        .style('stroke', 'red')
+        .style('stroke-width', '1px')
+        .style('display', 'none');
+    }
+
+    this._chartContainer.append('rect')
+      .style('fill', 'none')
+      .style('stroke', 'none')
+      .style('pointer-events', 'all')
+      .style('cursor', 'crosshair')
+      .attr('width', this.width)
+      .attr('height', this.height);
+  }
+
+  _useBrush(): void {
+    this._brush = this._d3.brushX()
+      .extent([
+        [0, 0],
+        [this.width, this.height]
+      ])
+      .handleSize(20)
+      .filter(() => !this._d3.event.shiftKey)
+      .on('start', this.onBrushStart.bind(this))
+      .on('end', this.onBrushEnd.bind(this))
+
+    this._chartContainer
+      .call(this._brush)
+      .on('mouseover', this.onMouseOver.bind(this))
+      .on('mouseout', this.onMouseOut.bind(this))
+      .on('mousemove', this.onMouseMove.bind(this))
+      .on('dblclick', this.zoomOut.bind(this));
   }
 
   _renderLegend(): void {
@@ -193,14 +250,60 @@ export abstract class ChartwerkBase {
       .text(this._options.labelFormat.xAxis);
   }
 
-  get xScale(): d3.ScaleLinear<number, number> | d3.ScaleTime<number, number> {
-    if (
-      this.minValue === undefined ||
-      this.maxValue === undefined
-    ) {
-      return this._d3.scaleLinear()
-        // TODO: use timerange from options
-        .domain([0, 1])
+  _renderNoDataPointsMessage(): void {
+    this._chartContainer.append('text')
+      .attr('class', 'alert-text')
+      .attr('x', this.width / 2)
+      .attr('y', this.height / 2)
+      .style('text-anchor', 'middle')
+      .style('font-size', '14px')
+      .style('fill', 'currentColor')
+      .text('No data points');
+  }
+
+  onBrushStart(): void {
+    this._options.eventsCallbacks.mouseOut();
+  }
+
+  onBrushEnd(): void {
+    const extent = this._d3.event.selection;
+    if(extent === undefined || extent === null || extent.length < 2) {
+      return;
+    }
+    this._chartContainer
+      .call(this._brush.move, null);
+    const startTimestamp = this.xScale.invert(extent[0]).getTime();
+    const endTimestamp = this.xScale.invert(extent[1]).getTime();
+    if(Math.abs(endTimestamp - startTimestamp) / 60000 < this._options.timeInterval) {
+      return;
+    }
+    const range: [number, number] = [startTimestamp, endTimestamp];
+    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomIn !== undefined) {
+      this._options.eventsCallbacks.zoomIn(range);
+    } else {
+      console.log('zoom in, but there is no callback');
+    }
+  }
+
+  zoomOut(): void {
+    if(this.isOutOfChart() === true) {
+      return;
+    }
+    const midTimestamp = this.xScale.invert(this.width / 2).getTime();
+    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomOut !== undefined) {
+      this._options.eventsCallbacks.zoomOut(midTimestamp);
+    } else {
+      console.log('zoom out, but there is no callback');
+    }
+  }
+
+  get xScale(): d3.ScaleTime<number, number> {
+    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
+      return this._d3.scaleTime()
+        .domain([
+          new Date(this._options.timeRange.from),
+          new Date(this._options.timeRange.to)
+        ])
         .range([0, this.width]);
     }
     // TODO: add timezone (utc / browser) to options and use it
@@ -212,11 +315,11 @@ export abstract class ChartwerkBase {
       .range([0, this.width]);
   }
 
-  get xTimeScale(): d3.ScaleTime<number, number> {
-    return this._d3.scaleTime()
+  get timestampScale(): d3.ScaleLinear<number, number> {
+    return this._d3.scaleLinear()
       .domain([
-        new Date(_.first(this._series[0].datapoints)[1]),
-        new Date(_.last(this._series[0].datapoints)[1])
+        _.first(this._series[0].datapoints)[1],
+        _.last(this._series[0].datapoints)[1]
       ])
       .range([0, this.width])
   }
@@ -245,7 +348,7 @@ export abstract class ChartwerkBase {
         return this._d3.timeMinute.every(this._options.timeInterval);
       }
     }
-    return 4;
+    return 5;
   }
 
   get daysCount(): number {
