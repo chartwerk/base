@@ -15,15 +15,26 @@ export abstract class ChartwerkBase {
     constructor(_d3: typeof d3, el: HTMLElement, _series?: TimeSerie[], _options?: Options);
     render(): void;
     abstract _renderMetrics(): void;
+    abstract onMouseOver(): void;
+    abstract onMouseOut(): void;
+    abstract onMouseMove(): void;
+    abstract renderSharedCrosshair(timestamp: number): void;
+    abstract hideSharedCrosshair(): void;
     _renderSvg(): void;
     _renderGrid(): void;
     _renderXAxis(): void;
     _renderYAxis(): void;
+    _renderCrosshair(): void;
+    _useBrush(): void;
     _renderLegend(): void;
     _renderYLabel(): void;
     _renderXLabel(): void;
-    get xScale(): d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>;
-    get xTimeScale(): d3.ScaleTime<number, number>;
+    _renderNoDataPointsMessage(): void;
+    onBrushStart(): void;
+    onBrushEnd(): void;
+    zoomOut(): void;
+    get xScale(): d3.ScaleTime<number, number>;
+    get timestampScale(): d3.ScaleLinear<number, number>;
     get yScale(): d3.ScaleLinear<number, number>;
     ticksCount(scaleFactor: number): d3.TimeInterval | number;
     get daysCount(): number;
@@ -77,6 +88,10 @@ export type Options = {
     bounds?: {
         upper: string;
         lower: string;
+    };
+    timeRange?: {
+        from: number;
+        to: number;
     };
 };
 export enum TickOrientation {

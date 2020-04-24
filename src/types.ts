@@ -25,6 +25,10 @@ export type Options = {
     upper: string;
     lower: string;
   };
+  timeRange?: {
+    from: number,
+    to: number
+  };
 };
 export enum TickOrientation {
   VERTICAL = 'vertical',
