@@ -240,10 +240,14 @@ export abstract class ChartwerkBase {
     if (this._options.labelFormat === undefined || this._options.labelFormat.xAxis === undefined) {
       return;
     }
+    let yPosition = this.height + this.margin.top + this.margin.bottom - 45;
+    if(this._series.length === 0) {
+      yPosition += 20;
+    }
     this._chartContainer.append('text')
       .attr('class', 'x-axis-label')
       .attr('x', this.width / 2)
-      .attr('y', this.height + this.margin.top + this.margin.bottom - 45)
+      .attr('y', yPosition)
       .style('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', 'currentColor')
@@ -489,7 +493,7 @@ export abstract class ChartwerkBase {
     const eventX = event[0];
     const eventY = event[1];
     if(
-      eventY > this.height || eventY < 0 ||
+      eventY > this.height + 1 || eventY < -1 ||
       eventX > this.width || eventX < 0
     ) {
       return true;
