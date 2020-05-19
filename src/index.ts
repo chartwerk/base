@@ -140,7 +140,9 @@ export abstract class ChartwerkBase {
       .attr('id', 'crosshair-line-x')
       .attr('fill', 'red')
       .attr('stroke', 'red')
-      .attr('stroke-width', '1px');
+      .attr('stroke-width', '1px')
+      .attr('y1', 0)
+      .attr('y2', this.height);
 
     for(let i = 0; i < this._series.length; i++) {
       this._crosshair.append('circle')
@@ -381,7 +383,7 @@ export abstract class ChartwerkBase {
   }
 
   get xTickTransform(): string {
-    if(this._options.tickFormat === undefined && this._options.tickFormat.xTickOrientation === undefined) {
+    if(this._options.tickFormat === undefined || this._options.tickFormat.xTickOrientation === undefined) {
       return '';
     }
     switch (this._options.tickFormat.xTickOrientation) {
@@ -477,6 +479,13 @@ export abstract class ChartwerkBase {
   }
 
   get seriesTargetsWithBounds(): any[] {
+    if(
+      this._options.bounds === undefined ||
+      this._options.bounds.upper === undefined ||
+      this._options.bounds.lower === undefined
+    ) {
+      return [];
+    }
     let series = [];
     this._series.forEach(serie => {
       series.push(this.formatedBound(this._options.bounds.upper, serie.target));
