@@ -302,7 +302,8 @@ export abstract class ChartwerkBase {
   }
 
   get xScale(): d3.ScaleTime<number, number> {
-    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
+    if((this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) && 
+      this._options.timeRange !== undefined) {
       return this._d3.scaleTime()
         .domain([
           new Date(this._options.timeRange.from),
@@ -397,7 +398,7 @@ export abstract class ChartwerkBase {
 
   get extraMargin(): Margin {
     let optionalMargin = { top: 0, right: 0, bottom: 0, left: 0 };
-    if(this._options.tickFormat.xTickOrientation !== undefined) {
+    if(this._options.tickFormat !== undefined && this._options.tickFormat.xTickOrientation !== undefined) {
       switch (this._options.tickFormat.xTickOrientation) {
         case TickOrientation.VERTICAL:
           optionalMargin.bottom += 80;
