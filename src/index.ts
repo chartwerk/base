@@ -140,7 +140,9 @@ export abstract class ChartwerkBase {
       .attr('id', 'crosshair-line-x')
       .attr('fill', 'red')
       .attr('stroke', 'red')
-      .attr('stroke-width', '1px');
+      .attr('stroke-width', '1px')
+      .attr('y1', 0)
+      .attr('y2', this.height);
 
     for(let i = 0; i < this._series.length; i++) {
       this._crosshair.append('circle')
@@ -302,7 +304,8 @@ export abstract class ChartwerkBase {
   }
 
   get xScale(): d3.ScaleTime<number, number> {
-    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
+    if((this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) && 
+      this._options.timeRange !== undefined) {
       return this._d3.scaleTime()
         .domain([
           new Date(this._options.timeRange.from),
@@ -380,7 +383,7 @@ export abstract class ChartwerkBase {
   }
 
   get xTickTransform(): string {
-    if(this._options.tickFormat === undefined && this._options.tickFormat.xTickOrientation === undefined) {
+    if(this._options.tickFormat === undefined || this._options.tickFormat.xTickOrientation === undefined) {
       return '';
     }
     switch (this._options.tickFormat.xTickOrientation) {
@@ -397,7 +400,7 @@ export abstract class ChartwerkBase {
 
   get extraMargin(): Margin {
     let optionalMargin = { top: 0, right: 0, bottom: 0, left: 0 };
-    if(this._options.tickFormat.xTickOrientation !== undefined) {
+    if(this._options.tickFormat !== undefined && this._options.tickFormat.xTickOrientation !== undefined) {
       switch (this._options.tickFormat.xTickOrientation) {
         case TickOrientation.VERTICAL:
           optionalMargin.bottom += 80;
@@ -476,6 +479,13 @@ export abstract class ChartwerkBase {
   }
 
   get seriesTargetsWithBounds(): any[] {
+    if(
+      this._options.bounds === undefined ||
+      this._options.bounds.upper === undefined ||
+      this._options.bounds.lower === undefined
+    ) {
+      return [];
+    }
     let series = [];
     this._series.forEach(serie => {
       series.push(this.formatedBound(this._options.bounds.upper, serie.target));
