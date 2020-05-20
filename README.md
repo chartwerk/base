@@ -59,6 +59,40 @@ for example:
 }
 ```
 
+- `bounds`: specify which metrics should be rendered as confidence. (TODO: move to `@chartwerk/line-chart`)
+`$__metric_name` macro can be used here. It will be replaced with each metric name to find it's bound.
+```
+{
+  upper: string;
+  lower: string;
+}
+```
+
+for example:
+metric names: 'serie', 'serie upper_bound', 'serie lower_bound'
+```js
+bounds={
+  upper: '$__metric_name upper_bound';
+  lower: '$__metric_name lower_bound';
+}
+```
+'serie upper_bound', 'serie lower_bound' metrics will be rendered as `serie` metric confidence;
+
+- `timeRange`: time range in timestamps
+```
+{
+  from: number;
+  to: number;
+}
+```
+for example:
+```js
+{
+  from: 1582770000000;
+  to: 1582810000000;
+}
+```
+
 - `eventsCallbacks`: event callbacks
 
 ```js
