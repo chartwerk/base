@@ -12,6 +12,7 @@ const DEFAULT_MARGIN: Margin = { top: 20, right: 20, bottom: 20, left: 20 };
 const DEFAULT_TICK_COUNT = 4;
 const MAX_GRID_COUNT = 24;
 const SECONDS_IN_DAY = 24 * 60 * 60;
+const MILISECONDS_IN_MINUTE = 60 * 1000;
 
 export abstract class ChartwerkBase {
   protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
@@ -268,7 +269,11 @@ export abstract class ChartwerkBase {
   }
 
   onBrushStart(): void {
-    this._options.eventsCallbacks.mouseOut();
+    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.mouseOut() !== undefined) {
+      this._options.eventsCallbacks.mouseOut();
+    } else {
+      console.log('mouse out, but there is no callback');
+    }
   }
 
   onBrushEnd(): void {
@@ -280,7 +285,7 @@ export abstract class ChartwerkBase {
       .call(this._brush.move, null);
     const startTimestamp = this.xScale.invert(extent[0]).getTime();
     const endTimestamp = this.xScale.invert(extent[1]).getTime();
-    if(Math.abs(endTimestamp - startTimestamp) / 60000 < this._options.timeInterval) {
+    if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
       return;
     }
     const range: [number, number] = [startTimestamp, endTimestamp];
@@ -379,7 +384,18 @@ export abstract class ChartwerkBase {
     if(this._options.tickFormat !== undefined && this._options.tickFormat.xAxis !== undefined) {
       return this._d3.timeFormat(this._options.tickFormat.xAxis);
     }
-    return (() => '');
+    return this._d3.timeFormat('%m/%d %H:%M');
+  }
+
+  get timeInterval(): number {
+    if(this._options.timeInterval !== undefined) {
+      return this._options.timeInterval * MILISECONDS_IN_MINUTE;
+    }
+    if(this._series !== undefined && this._series.length > 0) {
+      const interval = this._series[0].datapoints[1][1] - this._series[0].datapoints[0][1];
+      return interval;
+    }
+    return MILISECONDS_IN_MINUTE;
   }
 
   get xTickTransform(): string {
