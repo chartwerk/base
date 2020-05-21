@@ -40,6 +40,7 @@ export abstract class ChartwerkBase {
     get daysCount(): number;
     get serieTimestampRange(): number | undefined;
     get timeFormat(): (date: Date) => string;
+    get timeInterval(): number;
     get xTickTransform(): string;
     get extraMargin(): Margin;
     get width(): number;
