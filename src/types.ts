@@ -12,7 +12,10 @@ export type Options = {
     mouseOut: () => void,
     onLegendClick: (idx: number) => void
   };
-  timeInterval?: number;
+  timeInterval?: {
+    timeFormat?: TimeFormat;
+    count: number;
+  }
   tickFormat?: {
     xAxis?: string;
     xTickOrientation?: TickOrientation;
@@ -29,9 +32,14 @@ export type Options = {
     from: number,
     to: number
   };
+  renderBarLabels?: boolean;
 };
 export enum TickOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
   DIAGONAL = 'diagonal'
+}
+export enum TimeFormat {
+  MIN = 'minute',
+  MONTH = 'month'
 }
