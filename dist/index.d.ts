@@ -36,7 +36,8 @@ export abstract class ChartwerkBase {
     get xScale(): d3.ScaleTime<number, number>;
     get timestampScale(): d3.ScaleLinear<number, number>;
     get yScale(): d3.ScaleLinear<number, number>;
-    ticksCount(scaleFactor: number): d3.TimeInterval | number;
+    get ticksCount(): d3.TimeInterval | number;
+    getd3TimeRangeEvery(count: number): d3.TimeInterval;
     get daysCount(): number;
     get serieTimestampRange(): number | undefined;
     get timeFormat(): (date: Date) => string;
@@ -77,7 +78,10 @@ export type Options = {
         mouseOut: () => void;
         onLegendClick: (idx: number) => void;
     };
-    timeInterval?: number;
+    timeInterval?: {
+        timeFormat?: TimeFormat;
+        count: number;
+    };
     tickFormat?: {
         xAxis?: string;
         xTickOrientation?: TickOrientation;
@@ -94,10 +98,15 @@ export type Options = {
         from: number;
         to: number;
     };
+    renderBarLabels?: boolean;
 };
 export enum TickOrientation {
     VERTICAL = "vertical",
     HORIZONTAL = "horizontal",
     DIAGONAL = "diagonal"
+}
+export enum TimeFormat {
+    MIN = "minute",
+    MONTH = "month"
 }
 
