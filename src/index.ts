@@ -1,6 +1,6 @@
 import styles from './css/style.css';
 
-import { Margin, TimeSerie, Options, TickOrientation } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat } from './types';
 import { getRandomColor } from './utils';
 
 // we import only d3 types here
@@ -90,7 +90,7 @@ export abstract class ChartwerkBase {
       .attr('transform', `translate(0,${this.height})`)
       .attr('class', 'grid')
       .call(
-        this._d3.axisBottom(this.xScale).ticks(this.ticksCount(2))
+        this._d3.axisBottom(this.xScale).ticks(this.ticksCount)
           .tickSize(-this.height)
           .tickFormat(() => '')
       );
@@ -114,7 +114,7 @@ export abstract class ChartwerkBase {
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
       .call(
-        this._d3.axisBottom(this.xScale).ticks(this.ticksCount(1))
+        this._d3.axisBottom(this.xScale).ticks(this.ticksCount)
           .tickSize(2)
           .tickFormat(this.timeFormat)
       );
@@ -125,6 +125,7 @@ export abstract class ChartwerkBase {
   _renderYAxis(): void {
     this._chartContainer
       .append('g')
+      .attr('id', 'y-axis-container')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
         this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
@@ -134,6 +135,7 @@ export abstract class ChartwerkBase {
 
   _renderCrosshair(): void {
     this._crosshair = this._chartContainer.append('g')
+      .attr('id', 'crosshair-container')
       .style('display', 'none');
 
     this._crosshair.append('line')
@@ -352,15 +354,29 @@ export abstract class ChartwerkBase {
       .range([0, this.height]);
   }
 
-  ticksCount(scaleFactor: number): d3.TimeInterval | number {
-    if(this._options.timeInterval !== undefined) {
-      if(this.daysCount > 1 * scaleFactor) {
-        return MAX_GRID_COUNT * scaleFactor;
-      } else {
-        return this._d3.timeMinute.every(this._options.timeInterval);
-      }
+  get ticksCount(): d3.TimeInterval | number {
+    if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
+      // TODO: refactor max ticks limit
+      // if(this.daysCount > 1 * scaleFactor) {
+      //   return MAX_GRID_COUNT * scaleFactor;
+      // } else {}
+      return this.getd3TimeRangeEvery(this._options.timeInterval.count);
     }
     return 5;
+  }
+
+  getd3TimeRangeEvery(count: number): d3.TimeInterval {
+    if(this._options.timeInterval === undefined || this._options.timeInterval.timeFormat === undefined) {
+      return this._d3.timeMinute.every(count);
+    }
+    switch(this._options.timeInterval.timeFormat) {
+      case TimeFormat.MIN:
+        return this._d3.timeMinute.every(count);
+      case TimeFormat.MONTH:
+        return this._d3.timeMonth.every(count);
+      default:
+        return this._d3.timeMinute.every(count);
+    }
   }
 
   get daysCount(): number {
@@ -388,12 +404,13 @@ export abstract class ChartwerkBase {
   }
 
   get timeInterval(): number {
-    if(this._options.timeInterval !== undefined) {
-      return this._options.timeInterval * MILISECONDS_IN_MINUTE;
-    }
-    if(this._series !== undefined && this._series.length > 0) {
+    if(this._series !== undefined && this._series.length > 0 && this._series[0].datapoints.length > 1) {
       const interval = this._series[0].datapoints[1][1] - this._series[0].datapoints[0][1];
       return interval;
+    }
+    if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
+      //TODO: timeFormat to timestamp
+      return this._options.timeInterval.count * MILISECONDS_IN_MINUTE;
     }
     return MILISECONDS_IN_MINUTE;
   }
