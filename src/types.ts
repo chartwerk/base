@@ -33,6 +33,7 @@ export type Options = {
     to: number
   };
   renderBarLabels?: boolean;
+  renderTicksfromTimestamps?: boolean;
 };
 export enum TickOrientation {
   VERTICAL = 'vertical',
@@ -40,6 +41,10 @@ export enum TickOrientation {
   DIAGONAL = 'diagonal'
 }
 export enum TimeFormat {
-  MIN = 'minute',
-  MONTH = 'month'
+  SECOND = 'second',
+  MINUTE = 'minute',
+  HOUR = 'hour',
+  DAY = 'day',
+  MONTH = 'month',
+  YEAR = 'year'
 }
