@@ -8,7 +8,7 @@ import * as d3 from 'd3';
 import * as _ from 'lodash';
 
 
-const DEFAULT_MARGIN: Margin = { top: 20, right: 20, bottom: 20, left: 20 };
+const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
 const DEFAULT_TICK_COUNT = 4;
 const MAX_GRID_COUNT = 24;
 const SECONDS_IN_DAY = 24 * 60 * 60;
@@ -90,7 +90,7 @@ export abstract class ChartwerkBase {
       .attr('transform', `translate(0,${this.height})`)
       .attr('class', 'grid')
       .call(
-        this._d3.axisBottom(this.xScale).ticks(this.ticksCount)
+        this.axisBottomWithTicks
           .tickSize(-this.height)
           .tickFormat(() => '')
       );
@@ -114,7 +114,7 @@ export abstract class ChartwerkBase {
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
       .call(
-        this._d3.axisBottom(this.xScale).ticks(this.ticksCount)
+        this.axisBottomWithTicks
           .tickSize(2)
           .tickFormat(this.timeFormat)
       );
@@ -354,6 +354,15 @@ export abstract class ChartwerkBase {
       .range([0, this.height]);
   }
 
+  get axisBottomWithTicks(): d3.Axis<number | Date | { valueOf(): number }> {
+    // TODO: find a better way
+    if(this._options.renderTicksfromTimestamps === true) {
+      return this._d3.axisBottom(this.xScale)
+        .tickValues(this._series[0].datapoints.map(d => new Date(d[1])));
+    }
+    return this._d3.axisBottom(this.xScale).ticks(this.ticksCount);
+  }
+
   get ticksCount(): d3.TimeInterval | number {
     if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
       // TODO: refactor max ticks limit
@@ -370,12 +379,20 @@ export abstract class ChartwerkBase {
       return this._d3.timeMinute.every(count);
     }
     switch(this._options.timeInterval.timeFormat) {
-      case TimeFormat.MIN:
-        return this._d3.timeMinute.every(count);
+      case TimeFormat.SECOND:
+        return this._d3.utcSecond.every(count);
+      case TimeFormat.MINUTE:
+        return this._d3.utcMinute.every(count);
+      case TimeFormat.HOUR:
+        return this._d3.utcHour.every(count);
+      case TimeFormat.DAY:
+        return this._d3.utcDay.every(count);
       case TimeFormat.MONTH:
-        return this._d3.timeMonth.every(count);
+        return this._d3.utcMonth.every(count);
+      case TimeFormat.YEAR:
+        return this._d3.utcYear.every(count);
       default:
-        return this._d3.timeMinute.every(count);
+        return this._d3.utcMinute.every(count);
     }
   }
 
