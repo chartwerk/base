@@ -1,5 +1,5 @@
 <template>
-  <div :id="id">
+  <div class="vue-chartwerk-base" :id="id">
   </div>
 </template>
 
@@ -23,6 +23,7 @@ export default class VueChartwerkBase extends Vue {
   @Prop({ required: true })
   options!: VueOptions;
 
+  @Watch('id')
   @Watch('series')
   @Watch('options')
   onParamChanged(): void {
@@ -76,7 +77,7 @@ export default class VueChartwerkBase extends Vue {
 </script>
 
 <style scoped>
-#vue-chartwerk-base {
+.vue-chartwerk-base {
   width: 100%;
   height: 100%;
 }
