@@ -1,12 +1,12 @@
 <template>
-  <div id="vue-chartwerk-base">
+  <div :id="id">
   </div>
 </template>
 
 <script lang="ts">
 import { ChartwerkBase } from '../dist/index.js';
 
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat } from './types';
+import { Margin, TimeSerie, VueOptions, TickOrientation, TimeFormat } from './types';
 
 import { Component, Vue, Prop, Watch } from 'vue-property-decorator';
 
@@ -15,10 +15,13 @@ import * as _ from 'lodash';
 @Component
 export default class VueChartwerkBase extends Vue {
   @Prop({ required: true })
+  id!: string;
+
+  @Prop({ required: true })
   series!: TimeSerie[];
 
   @Prop({ required: true })
-  options!: Options;
+  options!: VueOptions;
 
   @Watch('series')
   @Watch('options')
@@ -29,7 +32,7 @@ export default class VueChartwerkBase extends Vue {
   renderBase(): void {
     this.appendEvents();
     //@ts-ignore
-    new ChartwerkBase(document.getElementById('vue-chartwerk-base'), this.series, this.options);
+    new ChartwerkBase(document.getElementById(this.id), this.series, this.options);
   }
 
   appendEvents(): void {
@@ -50,24 +53,24 @@ export default class VueChartwerkBase extends Vue {
     }
   }
 
-  zoomIn(): void {
-    this.$emit('zoomIn');
+  zoomIn(range: [number, number]): void {
+    this.$emit('zoomIn', range);
   }
 
-  zoomOut(): void {
-    this.$emit('zoomOut');
+  zoomOut(center: number): void {
+    this.$emit('zoomOut', center);
   }
 
-  mouseMove(): void {
-    this.$emit('mouseMove');
+  mouseMove(evt: any): void {
+    this.$emit('mouseMove', evt);
   }
 
   mouseOut(): void {
     this.$emit('mouseOut');
   }
 
-  onLegendClick(): void {
-    this.$emit('onLegendClick');
+  onLegendClick(idx: number): void {
+    this.$emit('onLegendClick', idx);
   }
 }
 </script>

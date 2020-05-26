@@ -40,6 +40,7 @@ export type Options = {
   renderLegend?: boolean;
   renderCrosshair?: boolean;
 };
+export type VueOptions = Omit<Options, "eventsCallbacks">;
 export enum TickOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
