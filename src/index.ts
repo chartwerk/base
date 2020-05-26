@@ -13,6 +13,22 @@ const DEFAULT_TICK_COUNT = 4;
 const MAX_GRID_COUNT = 24;
 const SECONDS_IN_DAY = 24 * 60 * 60;
 const MILISECONDS_IN_MINUTE = 60 * 1000;
+const DEFAULT_OPTIONS: Options = {
+  timeInterval: {
+    timeFormat: TimeFormat.MINUTE
+  },
+  tickFormat: {
+    xAxis: '%m/%d %H:%M',
+    xTickOrientation: TickOrientation.HORIZONTAL
+  },
+  renderBarLabels: true,
+  renderTicksfromTimestamps: true,
+  renderBrushing: true,
+  renderYaxis: true,
+  renderXaxis: true,
+  renderLegend: true,
+  renderCrosshair: true
+}
 
 export abstract class ChartwerkBase {
   protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
@@ -30,6 +46,7 @@ export abstract class ChartwerkBase {
     // TODO: test if it's necessary
     styles.use();
 
+    _.defaults(this._options, DEFAULT_OPTIONS);
     if(this._options.colors === undefined) {
       this._options.colors = this._series.map(getRandomColor);
     }
@@ -109,6 +126,9 @@ export abstract class ChartwerkBase {
   }
 
   _renderXAxis(): void {
+    if(this._options.renderXaxis === false) {
+      return;
+    }
     this._chartContainer
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
@@ -123,6 +143,9 @@ export abstract class ChartwerkBase {
   }
 
   _renderYAxis(): void {
+    if(this._options.renderYaxis === false) {
+      return;
+    }
     this._chartContainer
       .append('g')
       .attr('id', 'y-axis-container')
@@ -134,6 +157,9 @@ export abstract class ChartwerkBase {
   }
 
   _renderCrosshair(): void {
+    if(this._options.renderYaxis === false) {
+      return;
+    }
     this._crosshair = this._chartContainer.append('g')
       .attr('id', 'crosshair-container')
       .style('display', 'none');
@@ -168,6 +194,9 @@ export abstract class ChartwerkBase {
   }
 
   _useBrush(): void {
+    if(this._options.renderBrushing === false) {
+      return;
+    }
     this._brush = this._d3.brushX()
       .extent([
         [0, 0],
@@ -187,6 +216,9 @@ export abstract class ChartwerkBase {
   }
 
   _renderLegend(): void {
+    if(this._options.renderLegend === false) {
+      return;
+    }
     if(this._series.length > 0) {
       let legendRow = this._chartContainer
         .append('g')
@@ -242,7 +274,7 @@ export abstract class ChartwerkBase {
   }
 
   _renderXLabel(): void {
-    if (this._options.labelFormat === undefined || this._options.labelFormat.xAxis === undefined) {
+    if(this._options.labelFormat === undefined || this._options.labelFormat.xAxis === undefined) {
       return;
     }
     let yPosition = this.height + this.margin.top + this.margin.bottom - 45;

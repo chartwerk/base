@@ -14,8 +14,8 @@ export type Options = {
   };
   timeInterval?: {
     timeFormat?: TimeFormat;
-    count: number;
-  }
+    count?: number;
+  };
   tickFormat?: {
     xAxis?: string;
     xTickOrientation?: TickOrientation;
@@ -34,6 +34,11 @@ export type Options = {
   };
   renderBarLabels?: boolean;
   renderTicksfromTimestamps?: boolean;
+  renderBrushing?: boolean;
+  renderYaxis?: boolean;
+  renderXaxis?: boolean;
+  renderLegend?: boolean;
+  renderCrosshair?: boolean;
 };
 export enum TickOrientation {
   VERTICAL = 'vertical',
