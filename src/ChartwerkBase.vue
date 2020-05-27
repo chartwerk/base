@@ -3,8 +3,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { ChartwerkBase } from './index';
+<script>
+import { ChartwerkBase } from '@chartwerk/base';
 
 import Vue from 'vue';
 
