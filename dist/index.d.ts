@@ -4,7 +4,7 @@
 
 import * as d3 from 'd3';
 
-export abstract class ChartwerkBase {
+abstract class ChartwerkBase {
     protected _d3: typeof d3;
     protected _series: TimeSerie[];
     protected _options: Options;
@@ -57,6 +57,44 @@ export abstract class ChartwerkBase {
     get visibleSeries(): any[];
     isOutOfChart(): boolean;
 }
+export { ChartwerkBase, VueChartwerkBaseMixin };
+
+const _default: {
+    name: string;
+    props: {
+        id: {
+            type: StringConstructor;
+            required: boolean;
+        };
+        series: {
+            type: ArrayConstructor;
+            required: boolean;
+            default: () => any[];
+        };
+        options: {
+            type: ObjectConstructor;
+            required: boolean;
+            default: () => {};
+        };
+    };
+    watch: {
+        id(): void;
+        series(): void;
+        options(): void;
+    };
+    mounted(): void;
+    methods: {
+        render(): void;
+        renderChart(): void;
+        appendEvents(): void;
+        zoomIn(range: any): void;
+        zoomOut(center: any): void;
+        mouseMove(evt: any): void;
+        mouseOut(): void;
+        onLegendClick(idx: any): void;
+    };
+};
+export default _default;
 
 export type Margin = {
     top: number;

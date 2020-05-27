@@ -1,3 +1,5 @@
+import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
+
 import styles from './css/style.css';
 
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat } from './types';
@@ -30,7 +32,7 @@ const DEFAULT_OPTIONS: Options = {
   renderCrosshair: true
 }
 
-export abstract class ChartwerkBase {
+abstract class ChartwerkBase {
   protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
   protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -343,7 +345,7 @@ export abstract class ChartwerkBase {
   }
 
   get xScale(): d3.ScaleTime<number, number> {
-    if((this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) && 
+    if((this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) &&
       this._options.timeRange !== undefined) {
       return this._d3.scaleTime()
         .domain([
@@ -593,3 +595,5 @@ export abstract class ChartwerkBase {
     return false;
   }
 }
+
+export { ChartwerkBase, VueChartwerkBaseMixin };
