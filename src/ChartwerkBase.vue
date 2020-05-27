@@ -4,8 +4,6 @@
 </template>
 
 <script>
-import { ChartwerkBase } from '@chartwerk/base';
-
 import Vue from 'vue';
 
 import * as _ from 'lodash';
@@ -30,22 +28,22 @@ export default {
   },
   watch: {
     id() {
-      this.renderBase();
+      this.renderChart();
     },
     series() {
-      this.renderBase();
+      this.renderChart();
     },
     options() {
-      this.renderBase();
+      this.renderChart();
     }
+  },
+  mounted() {
+    this.renderChart();
   },
   methods: {
     // it's abstract method. "children" components should override it
-    render() {
-      // it's just example
-      new ChartwerkBase(document.getElementById(this.id), this.series, this.options);
-    }
-    renderBase() {
+    render() { }
+    renderChart() {
       this.appendEvents();
       this.render();
     },
