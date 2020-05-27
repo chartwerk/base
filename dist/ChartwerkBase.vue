@@ -1,5 +1,5 @@
 <template>
-  <div class="vue-chartwerk-base" :id="id">
+  <div class="chartwerk-base" :id="id">
   </div>
 </template>
 
@@ -40,10 +40,14 @@ export default {
     }
   },
   methods: {
+    // it's abstract method. "children" components should override it
+    render() {
+      // it's just example
+      new ChartwerkBase(document.getElementById(this.id), this.series, this.options);
+    }
     renderBase() {
       this.appendEvents();
-      //@ts-ignore
-      new ChartwerkBase(document.getElementById(this.id), this.series, this.options);
+      this.render();
     },
     appendEvents() {
       if(_.has(this.$listeners, 'zoomIn')) {
@@ -82,7 +86,7 @@ export default {
 </script>
 
 <style scoped>
-.vue-chartwerk-base {
+.chartwerk-base {
   width: 100%;
   height: 100%;
 }
