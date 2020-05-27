@@ -1,7 +1,6 @@
 import * as _ from 'lodash';
 
 export default {
-  name: 'ChartwerkBase',
   props: {
     id: {
       type: String,
@@ -10,12 +9,12 @@ export default {
     series: {
       type: Array,
       required: false,
-      default: function () { return []; }
+      default: function() { return []; }
     },
     options: {
       type: Object,
       required: false,
-      default: function () { return {}; }
+      default: function() { return {}; }
     }
   },
   watch: {

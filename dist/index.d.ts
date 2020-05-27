@@ -60,7 +60,6 @@ abstract class ChartwerkBase {
 export { ChartwerkBase, VueChartwerkBaseMixin };
 
 const _default: {
-    name: string;
     props: {
         id: {
             type: StringConstructor;
