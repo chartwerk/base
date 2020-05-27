@@ -83,7 +83,7 @@ export type Options = {
     };
     timeInterval?: {
         timeFormat?: TimeFormat;
-        count: number;
+        count?: number;
     };
     tickFormat?: {
         xAxis?: string;
@@ -103,7 +103,13 @@ export type Options = {
     };
     renderBarLabels?: boolean;
     renderTicksfromTimestamps?: boolean;
+    renderBrushing?: boolean;
+    renderYaxis?: boolean;
+    renderXaxis?: boolean;
+    renderLegend?: boolean;
+    renderCrosshair?: boolean;
 };
+export type VueOptions = Omit<Options, "eventsCallbacks">;
 export enum TickOrientation {
     VERTICAL = "vertical",
     HORIZONTAL = "horizontal",

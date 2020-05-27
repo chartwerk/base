@@ -1,3 +1,5 @@
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
 const path = require('path');
 
 function resolve(dir) {
@@ -24,7 +26,12 @@ module.exports = {
   context: resolve('src'),
   entry: './index.ts',
   plugins: [
-    new DtsBundlePlugin()
+    new DtsBundlePlugin(),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'ChartwerkBase.vue' }
+      ]
+    })
   ],
   module: {
     rules: [
