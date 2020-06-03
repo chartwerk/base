@@ -24,7 +24,7 @@ const DEFAULT_OPTIONS: Options = {
     xTickOrientation: TickOrientation.HORIZONTAL
   },
   renderBarLabels: true,
-  renderTicksfromTimestamps: true,
+  renderTicksfromTimestamps: false,
   renderBrushing: true,
   renderYaxis: true,
   renderXaxis: true,
@@ -70,6 +70,7 @@ abstract class ChartwerkBase {
   }
 
   render(): void {
+    console.log('base upd 1')
     this._renderSvg();
     this._renderXAxis();
     this._renderYAxis();
@@ -239,7 +240,7 @@ abstract class ChartwerkBase {
         const isChecked = this._series[idx].visible !== false;
         legendRow.append('foreignObject')
           .attr('x', rowWidth)
-          .attr('y', this.height + this.margin.top + this.margin.bottom - 37)
+          .attr('y', this.legendRowPositionY - 12)
           .attr('width', 13)
           .attr('height', 13)
           .html(`<form><input type=checkbox ${isChecked? 'checked' : ''} /></form>`)
@@ -249,7 +250,7 @@ abstract class ChartwerkBase {
 
         legendRow.append('text')
           .attr('x', rowWidth + 20)
-          .attr('y', this.height + this.margin.top + this.margin.bottom - 25)
+          .attr('y', this.legendRowPositionY)
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
           .style('fill', this._options.colors[idx])
@@ -398,6 +399,7 @@ abstract class ChartwerkBase {
   }
 
   get ticksCount(): d3.TimeInterval | number {
+    console.log('ticks', this._options.timeInterval, this._options.timeInterval.count);
     if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
       // TODO: refactor max ticks limit
       // if(this.daysCount > 1 * scaleFactor) {
@@ -518,6 +520,10 @@ abstract class ChartwerkBase {
 
   get height(): number {
     return this._d3Node.node().clientHeight - this.margin.top - this.margin.bottom;
+  }
+
+  get legendRowPositionY(): number {
+    return this.height + this.margin.bottom - 5;
   }
 
   get margin(): Margin {
