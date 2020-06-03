@@ -23,8 +23,8 @@ const DEFAULT_OPTIONS: Options = {
     xAxis: '%m/%d %H:%M',
     xTickOrientation: TickOrientation.HORIZONTAL
   },
-  renderBarLabels: true,
-  renderTicksfromTimestamps: true,
+  renderBarLabels: false,
+  renderTicksfromTimestamps: false,
   renderBrushing: true,
   renderYaxis: true,
   renderXaxis: true,
@@ -239,7 +239,7 @@ abstract class ChartwerkBase {
         const isChecked = this._series[idx].visible !== false;
         legendRow.append('foreignObject')
           .attr('x', rowWidth)
-          .attr('y', this.height + this.margin.top + this.margin.bottom - 37)
+          .attr('y', this.legendRowPositionY - 12)
           .attr('width', 13)
           .attr('height', 13)
           .html(`<form><input type=checkbox ${isChecked? 'checked' : ''} /></form>`)
@@ -249,7 +249,7 @@ abstract class ChartwerkBase {
 
         legendRow.append('text')
           .attr('x', rowWidth + 20)
-          .attr('y', this.height + this.margin.top + this.margin.bottom - 25)
+          .attr('y', this.legendRowPositionY)
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
           .style('fill', this._options.colors[idx])
@@ -518,6 +518,10 @@ abstract class ChartwerkBase {
 
   get height(): number {
     return this._d3Node.node().clientHeight - this.margin.top - this.margin.bottom;
+  }
+
+  get legendRowPositionY(): number {
+    return this.height + this.margin.bottom - 5;
   }
 
   get margin(): Margin {
