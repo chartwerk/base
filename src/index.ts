@@ -23,7 +23,7 @@ const DEFAULT_OPTIONS: Options = {
     xAxis: '%m/%d %H:%M',
     xTickOrientation: TickOrientation.HORIZONTAL
   },
-  renderBarLabels: true,
+  renderBarLabels: false,
   renderTicksfromTimestamps: false,
   renderBrushing: true,
   renderYaxis: true,
@@ -70,7 +70,6 @@ abstract class ChartwerkBase {
   }
 
   render(): void {
-    console.log('base upd 1')
     this._renderSvg();
     this._renderXAxis();
     this._renderYAxis();
@@ -399,7 +398,6 @@ abstract class ChartwerkBase {
   }
 
   get ticksCount(): d3.TimeInterval | number {
-    console.log('ticks', this._options.timeInterval, this._options.timeInterval.count);
     if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
       // TODO: refactor max ticks limit
       // if(this.daysCount > 1 * scaleFactor) {
