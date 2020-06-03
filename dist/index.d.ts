@@ -49,6 +49,7 @@ abstract class ChartwerkBase {
     get extraMargin(): Margin;
     get width(): number;
     get height(): number;
+    get legendRowPositionY(): number;
     get margin(): Margin;
     get minValue(): number | undefined;
     get maxValue(): number | undefined;
