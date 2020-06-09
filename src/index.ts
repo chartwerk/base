@@ -2,8 +2,8 @@ import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
 
 import styles from './css/style.css';
 
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat } from './types';
-import { getRandomColor } from './utils';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation } from './types';
+import { getRandomColor, uid } from './utils';
 
 // we import only d3 types here
 import * as d3 from 'd3';
@@ -12,10 +12,9 @@ import * as _ from 'lodash';
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
 const DEFAULT_TICK_COUNT = 4;
-const MAX_GRID_COUNT = 24;
-const SECONDS_IN_DAY = 24 * 60 * 60;
 const MILISECONDS_IN_MINUTE = 60 * 1000;
 const DEFAULT_OPTIONS: Options = {
+  confidence: 0,
   timeInterval: {
     timeFormat: TimeFormat.MINUTE
   },
@@ -23,27 +22,36 @@ const DEFAULT_OPTIONS: Options = {
     xAxis: '%m/%d %H:%M',
     xTickOrientation: TickOrientation.HORIZONTAL
   },
-  renderBarLabels: false,
+  zoom: {
+    orientation: ZoomOrientation.HORIZONTAL,
+    transform: false
+  },
   renderTicksfromTimestamps: false,
   renderBrushing: true,
   renderYaxis: true,
   renderXaxis: true,
+  renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true
+  renderCrosshair: true,
+  renderPanning: true
 }
 
-abstract class ChartwerkBase {
+abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
   protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
   protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected _brush?: d3.BrushBehavior<unknown>;
+  protected _zoom?: any;
+  protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>;
+  private clipPathUID = '';
 
   constructor(
     // maybe it's not the best idea
     protected _d3: typeof d3,
     el: HTMLElement,
-    protected _series: TimeSerie[] = [],
-    protected _options: Options = {}
+    protected _series: T[] = [],
+    // Type 'Options' is not assignable to type 'U'.
+    protected _options: U
   ) {
     // TODO: test if it's necessary
     styles.use();
@@ -51,9 +59,6 @@ abstract class ChartwerkBase {
     _.defaults(this._options, DEFAULT_OPTIONS);
     if(this._options.colors === undefined) {
       this._options.colors = this._series.map(getRandomColor);
-    }
-    if(this._options.confidence === undefined) {
-      this._options.confidence = 0;
     }
 
     const colorsCount = this._options.colors.length;
@@ -65,19 +70,19 @@ abstract class ChartwerkBase {
       `);
     }
     this._d3Node = this._d3.select(el);
-
-    this.render();
   }
 
-  render(): void {
+  public render(): void {
     this._renderSvg();
     this._renderXAxis();
     this._renderYAxis();
     this._renderGrid();
 
+    this._renderClipPath();
     this._renderMetrics();
     this._renderCrosshair();
     this._useBrush();
+    this._useZoom();
 
     this._renderLegend();
     this._renderYLabel();
@@ -93,17 +98,20 @@ abstract class ChartwerkBase {
 
   _renderSvg(): void {
     this._d3Node.select('svg').remove();
-    this._chartContainer = this._d3Node
+    this._svg = this._d3Node
       .append('svg')
-        .style('width', '100%')
-        .style('height', '100%')
+      .style('width', '100%')
+      .style('height', '100%')
+      .style('backface-visibility', 'hidden');
+    this._chartContainer = this._svg
         .append('g')
           .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
-
-    // TODO: clipPath
   }
 
   _renderGrid(): void {
+    if(this._options.renderGrid === false) {
+      return;
+    }
     this._chartContainer
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
@@ -131,6 +139,7 @@ abstract class ChartwerkBase {
     if(this._options.renderXaxis === false) {
       return;
     }
+    this._chartContainer.select('#x-axis-container').remove();
     this._chartContainer
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
@@ -199,22 +208,54 @@ abstract class ChartwerkBase {
     if(this._options.renderBrushing === false) {
       return;
     }
-    this._brush = this._d3.brushX()
-      .extent([
+    switch(this._options.zoom.orientation) {
+      case ZoomOrientation.VERTICAL:
+        this._brush = this._d3.brushY();
+        break;
+      case ZoomOrientation.HORIZONTAL:
+        this._brush = this._d3.brushX();
+        break;
+      case ZoomOrientation.BOTH:
+        this._brush = this._d3.brush();
+        break;
+      default:
+        this._brush = this._d3.brushX();
+    }
+    this._brush.extent([
         [0, 0],
         [this.width, this.height]
       ])
       .handleSize(20)
-      .filter(() => !this._d3.event.shiftKey)
+      // .filter(() => !this._d3.event.shiftKey)
       .on('start', this.onBrushStart.bind(this))
       .on('end', this.onBrushEnd.bind(this))
 
     this._chartContainer
-      .call(this._brush)
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
       .on('dblclick', this.zoomOut.bind(this));
+  }
+
+  _useZoom(): void {
+    this._zoom = this._d3.zoom();
+    this._zoom
+      .scaleExtent([0.5, Infinity])
+      .on('zoom', this.zoomed.bind(this));
+
+    this._svg
+      .call(this._zoom);
+  }
+
+  _renderClipPath(): void {
+    this._chartContainer
+      .append('clipPath')
+      .attr('id', this.rectClipId)
+      .append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', this.width)
+      .attr('height', this.height)
   }
 
   _renderLegend(): void {
@@ -253,7 +294,6 @@ abstract class ChartwerkBase {
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
           .style('fill', this._options.colors[idx])
-          // @ts-ignore
           .text(this._series[idx].target);
       }
     }
@@ -319,17 +359,58 @@ abstract class ChartwerkBase {
     }
     this._chartContainer
       .call(this._brush.move, null);
-    const startTimestamp = this.xScale.invert(extent[0]).getTime();
-    const endTimestamp = this.xScale.invert(extent[1]).getTime();
-    if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
-      return;
+
+    let xRange: [number, number];
+    let yRange: [number, number];
+    switch(this._options.zoom.orientation) {
+      case ZoomOrientation.HORIZONTAL:
+        const startTimestamp = this.xScale.invert(extent[0]).getTime();
+        const endTimestamp = this.xScale.invert(extent[1]).getTime();
+        if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
+          return;
+        }
+        xRange = [startTimestamp, endTimestamp];
+        break;
+      case ZoomOrientation.VERTICAL:
+        const upperY = this.yScale.invert(extent[0]);
+        const bottomY = this.yScale.invert(extent[1]);
+        // TODO: add min zoom y
+        yRange = [upperY, bottomY];
+        break;
+      case ZoomOrientation.BOTH:
+        const bothStartTimestamp = this.xScale.invert(extent[0][0]).getTime();
+        const bothEndTimestamp = this.xScale.invert(extent[1][0]).getTime();
+        const bothUpperY = this.yScale.invert(extent[0][1]);
+        const bothBottomY = this.yScale.invert(extent[1][1]);
+        if(Math.abs(bothStartTimestamp - bothEndTimestamp) < this.timeInterval) {
+          return;
+        }
+        xRange = [bothStartTimestamp, bothEndTimestamp];
+        yRange = [bothUpperY, bothBottomY];
     }
-    const range: [number, number] = [startTimestamp, endTimestamp];
+    // if(xRange !== undefined && xRange.length > 0) {
+    //   this._options.zoom.x = xRange;
+    // }
+    // if(yRange !== undefined && yRange.length > 0) {
+    //   this._options.zoom.y = yRange;
+    // }
+    // this.render();
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomIn !== undefined) {
-      this._options.eventsCallbacks.zoomIn(range);
+      this._options.eventsCallbacks.zoomIn(xRange);
     } else {
       console.log('zoom in, but there is no callback');
     }
+  }
+
+  zoomed(): void {
+    if(this._options.renderPanning === true || this._options.zoom.transform === true) {
+      this._chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
+    }
+    // const newScaleDomain = this._d3.event.transform.rescaleX(this.xScale).domain();
+    // this._options.zoom.x = [newScaleDomain[0].getTime(), newScaleDomain[1].getTime()];
+    // this._renderXAxis();
+    // this._chartContainer.selectAll('.metric-path').remove();
+    // this._renderMetrics();
   }
 
   zoomOut(): void {
@@ -345,6 +426,14 @@ abstract class ChartwerkBase {
   }
 
   get xScale(): d3.ScaleTime<number, number> {
+    if(this._options.zoom.x !== undefined && this._options.zoom.x.length > 1) {
+      return this._d3.scaleTime()
+      .domain([
+        new Date(this._options.zoom.x[0]),
+        new Date(this._options.zoom.x[1])
+      ])
+      .range([0, this.width]);
+    }
     if((this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) &&
       this._options.timeRange !== undefined) {
       return this._d3.scaleTime()
@@ -373,6 +462,11 @@ abstract class ChartwerkBase {
   }
 
   get yScale(): d3.ScaleLinear<number, number> {
+    if(this._options.zoom.y !== undefined && this._options.zoom.y.length > 1) {
+      return this._d3.scaleLinear()
+        .domain(this._options.zoom.y)
+        .range([0, this.height]);
+    }
     if(
       this.minValue === undefined ||
       this.maxValue === undefined
@@ -399,10 +493,7 @@ abstract class ChartwerkBase {
 
   get ticksCount(): d3.TimeInterval | number {
     if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
-      // TODO: refactor max ticks limit
-      // if(this.daysCount > 1 * scaleFactor) {
-      //   return MAX_GRID_COUNT * scaleFactor;
-      // } else {}
+      // TODO: add max ticks limit
       return this.getd3TimeRangeEvery(this._options.timeInterval.count);
     }
     return 5;
@@ -428,14 +519,6 @@ abstract class ChartwerkBase {
       default:
         return this._d3.utcMinute.every(count);
     }
-  }
-
-  get daysCount(): number {
-    const timestampRange = this.serieTimestampRange;
-    if(timestampRange === undefined) {
-      return 0;
-    }
-    return timestampRange / SECONDS_IN_DAY;
   }
 
   get serieTimestampRange(): number | undefined {
@@ -584,6 +667,13 @@ abstract class ChartwerkBase {
 
   get visibleSeries(): any[] {
     return this._series.filter(serie => serie.visible !== false);
+  }
+
+  get rectClipId(): string {
+    if(this.clipPathUID.length === 0) {
+      this.clipPathUID = uid();
+    }
+    return this.clipPathUID;
   }
 
   isOutOfChart(): boolean {

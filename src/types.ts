@@ -1,12 +1,18 @@
 export type Margin = { top: number, right: number, bottom: number, left: number };
-export type TimeSerie = { target: string, alias: string, datapoints: [number, number][], visible: boolean };
+export type TimeSerie = {
+  target: string,
+  datapoints: [number, number][],
+  alias?: string,
+  visible?: boolean,
+  color?: string
+};
 // TODO: move some options to line-chart
 export type Options = {
   margin?: Margin;
   colors?: string[];
   confidence?: number;
   eventsCallbacks?: {
-    zoomIn: (range: [number, number]) => void,
+    zoomIn: (range: [number, number] | [[number, number], [number, number]]) => void,
     zoomOut: (center: number) => void,
     mouseMove: (evt: any) => void,
     mouseOut: () => void,
@@ -32,15 +38,22 @@ export type Options = {
     from: number,
     to: number
   };
-  renderBarLabels?: boolean;
+  zoom?: {
+    orientation?: ZoomOrientation;
+    transform?: boolean;
+    y?: [number, number],
+    x?: [number, number]
+  };
   renderTicksfromTimestamps?: boolean;
   renderBrushing?: boolean;
+  renderPanning?: boolean;
   renderYaxis?: boolean;
   renderXaxis?: boolean;
+  renderGrid?: boolean;
   renderLegend?: boolean;
   renderCrosshair?: boolean;
 };
-export type VueOptions = Omit<Options, "eventsCallbacks">;
+export type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export enum TickOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
@@ -53,4 +66,9 @@ export enum TimeFormat {
   DAY = 'day',
   MONTH = 'month',
   YEAR = 'year'
+}
+export enum ZoomOrientation {
+  VERTICAL = 'vertical',
+  HORIZONTAL = 'horizontal',
+  BOTH = 'both'
 }
