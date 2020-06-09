@@ -4,15 +4,17 @@
 
 import * as d3 from 'd3';
 
-abstract class ChartwerkBase {
+abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     protected _d3: typeof d3;
-    protected _series: TimeSerie[];
-    protected _options: Options;
+    protected _series: T[];
+    protected _options: U;
     protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected _brush?: d3.BrushBehavior<unknown>;
-    constructor(_d3: typeof d3, el: HTMLElement, _series?: TimeSerie[], _options?: Options);
+    protected _zoom?: any;
+    protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>;
+    constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: U);
     render(): void;
     abstract _renderMetrics(): void;
     abstract onMouseOver(): void;
@@ -26,12 +28,15 @@ abstract class ChartwerkBase {
     _renderYAxis(): void;
     _renderCrosshair(): void;
     _useBrush(): void;
+    _useZoom(): void;
+    _renderClipPath(): void;
     _renderLegend(): void;
     _renderYLabel(): void;
     _renderXLabel(): void;
     _renderNoDataPointsMessage(): void;
     onBrushStart(): void;
     onBrushEnd(): void;
+    zoomed(): void;
     zoomOut(): void;
     get xScale(): d3.ScaleTime<number, number>;
     get timestampScale(): d3.ScaleLinear<number, number>;
@@ -41,7 +46,6 @@ abstract class ChartwerkBase {
     }>;
     get ticksCount(): d3.TimeInterval | number;
     getd3TimeRangeEvery(count: number): d3.TimeInterval;
-    get daysCount(): number;
     get serieTimestampRange(): number | undefined;
     get timeFormat(): (date: Date) => string;
     get timeInterval(): number;
@@ -56,6 +60,7 @@ abstract class ChartwerkBase {
     formatedBound(alias: string, target: string): string;
     get seriesTargetsWithBounds(): any[];
     get visibleSeries(): any[];
+    get rectClipId(): string;
     isOutOfChart(): boolean;
 }
 export { ChartwerkBase, VueChartwerkBaseMixin };
@@ -104,16 +109,17 @@ export type Margin = {
 };
 export type TimeSerie = {
     target: string;
-    alias: string;
     datapoints: [number, number][];
-    visible: boolean;
+    alias?: string;
+    visible?: boolean;
+    color?: string;
 };
 export type Options = {
     margin?: Margin;
     colors?: string[];
     confidence?: number;
     eventsCallbacks?: {
-        zoomIn: (range: [number, number]) => void;
+        zoomIn: (range: [number, number] | [[number, number], [number, number]]) => void;
         zoomOut: (center: number) => void;
         mouseMove: (evt: any) => void;
         mouseOut: () => void;
@@ -139,15 +145,22 @@ export type Options = {
         from: number;
         to: number;
     };
-    renderBarLabels?: boolean;
+    zoom?: {
+        orientation?: ZoomOrientation;
+        transform?: boolean;
+        y?: [number, number];
+        x?: [number, number];
+    };
     renderTicksfromTimestamps?: boolean;
     renderBrushing?: boolean;
+    renderPanning?: boolean;
     renderYaxis?: boolean;
     renderXaxis?: boolean;
+    renderGrid?: boolean;
     renderLegend?: boolean;
     renderCrosshair?: boolean;
 };
-export type VueOptions = Omit<Options, "eventsCallbacks">;
+export type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export enum TickOrientation {
     VERTICAL = "vertical",
     HORIZONTAL = "horizontal",
@@ -160,5 +173,10 @@ export enum TimeFormat {
     DAY = "day",
     MONTH = "month",
     YEAR = "year"
+}
+export enum ZoomOrientation {
+    VERTICAL = "vertical",
+    HORIZONTAL = "horizontal",
+    BOTH = "both"
 }
 
