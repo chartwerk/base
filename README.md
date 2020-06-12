@@ -10,7 +10,7 @@ Plugin with an abstract class providing basics for timeseries visualization.
 
 ## Options:
 
-All options are elevctive:
+Options are not mandatory:
 
 - `margin` — chart container positioning;
 ```js
