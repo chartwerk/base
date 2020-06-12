@@ -28,7 +28,7 @@ abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     _renderYAxis(): void;
     _renderCrosshair(): void;
     _useBrush(): void;
-    _useZoom(): void;
+    _useScrollZoom(): void;
     _renderClipPath(): void;
     _renderLegend(): void;
     _renderYLabel(): void;
@@ -36,7 +36,7 @@ abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     _renderNoDataPointsMessage(): void;
     onBrushStart(): void;
     onBrushEnd(): void;
-    zoomed(): void;
+    scrollZoomed(): void;
     zoomOut(): void;
     get xScale(): d3.ScaleTime<number, number>;
     get timestampScale(): d3.ScaleLinear<number, number>;
@@ -146,14 +146,13 @@ export type Options = {
         to: number;
     };
     zoom?: {
+        type?: ZoomType;
         orientation?: ZoomOrientation;
         transform?: boolean;
         y?: [number, number];
         x?: [number, number];
     };
     renderTicksfromTimestamps?: boolean;
-    renderBrushing?: boolean;
-    renderPanning?: boolean;
     renderYaxis?: boolean;
     renderXaxis?: boolean;
     renderGrid?: boolean;
@@ -178,5 +177,9 @@ export enum ZoomOrientation {
     VERTICAL = "vertical",
     HORIZONTAL = "horizontal",
     BOTH = "both"
+}
+export enum ZoomType {
+    BRUSH = "brush",
+    SCROLL = "scroll"
 }
 
