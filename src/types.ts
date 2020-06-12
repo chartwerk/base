@@ -39,14 +39,13 @@ export type Options = {
     to: number
   };
   zoom?: {
+    type?: ZoomType;
     orientation?: ZoomOrientation;
     transform?: boolean;
     y?: [number, number],
     x?: [number, number]
   };
   renderTicksfromTimestamps?: boolean;
-  renderBrushing?: boolean;
-  renderPanning?: boolean;
   renderYaxis?: boolean;
   renderXaxis?: boolean;
   renderGrid?: boolean;
@@ -71,4 +70,8 @@ export enum ZoomOrientation {
   VERTICAL = 'vertical',
   HORIZONTAL = 'horizontal',
   BOTH = 'both'
+}
+export enum ZoomType {
+  BRUSH = 'brush',
+  SCROLL = 'scroll'
 }
