@@ -4,13 +4,13 @@ Plugin with an abstract class providing basics for timeseries visualization.
 
 ## Plugin renders:
 - SVG container with:
-  - Axes with ticks and labels
-  - Grid, scales using specified time interval
-  - Legend which can hide metrics
+  - Axes, with ticks and labels.
+  - Grid, which scales using specified time interval.
+  - Legend, which can hide metrics.
 
 ## Options:
 
-All options are optional
+Options are not mandatory:
 
 - `margin` — chart container positioning;
 ```js
@@ -22,14 +22,14 @@ margin={
 }
 ```
 
-- `colors`: array of metrics colors, should be equal or greater than series length;
+- `colors`: array of metrics colors (should be equal or greater than series length);
 ```js
 ['red', 'blue', 'green']
 ```
 
-- `timeInterval`: interval in minutes (max value = 60) affecting grid and x-axis ticks
+- `timeInterval`: interval in minutes (max value = 60) affecting grid and x-axis ticks.
 
-- `tickFormat`: config to control the axes ticks format
+- `tickFormat`: config to control the axes ticks format.
 ```js
 {
   xAxis: string; // x-axis time format (see [d3-time-format](https://github.com/d3/d3-time-format#locale_format) } 
@@ -44,7 +44,7 @@ for example:
 }
 ```
 
-- `labelFormat`: labels for axes
+- `labelFormat`: labels for axes.
 ```
 {
   xAxis: string;
@@ -60,7 +60,7 @@ for example:
 ```
 
 - `bounds`: specify which metrics should be rendered as confidence. (TODO: move to `@chartwerk/line-chart`)
-`$__metric_name` macro can be used here. It will be replaced with each metric name to find it's bound.
+`$__metric_name` macro can be used here. It will be replaced with each metric's name to find it's bound.
 ```
 {
   upper: string;
