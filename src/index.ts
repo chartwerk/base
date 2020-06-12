@@ -2,7 +2,7 @@ import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
 
 import styles from './css/style.css';
 
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
 import { getRandomColor, uid } from './utils';
 
 // we import only d3 types here
@@ -19,21 +19,19 @@ const DEFAULT_OPTIONS: Options = {
     timeFormat: TimeFormat.MINUTE
   },
   tickFormat: {
-    xAxis: '%m/%d %H:%M',
+    xAxis: '%H:%M',
     xTickOrientation: TickOrientation.HORIZONTAL
   },
   zoom: {
-    orientation: ZoomOrientation.HORIZONTAL,
-    transform: false
+    type: ZoomType.BRUSH,
+    orientation: ZoomOrientation.HORIZONTAL
   },
   renderTicksfromTimestamps: false,
-  renderBrushing: true,
   renderYaxis: true,
   renderXaxis: true,
   renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true,
-  renderPanning: true
+  renderCrosshair: true
 }
 
 abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
@@ -82,7 +80,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
     this._renderMetrics();
     this._renderCrosshair();
     this._useBrush();
-    this._useZoom();
+    this._useScrollZoom();
 
     this._renderLegend();
     this._renderYLabel();
@@ -205,7 +203,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
   }
 
   _useBrush(): void {
-    if(this._options.renderBrushing === false) {
+    if(this._options.zoom.type !== ZoomType.BRUSH) {
       return;
     }
     switch(this._options.zoom.orientation) {
@@ -231,17 +229,21 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
       .on('end', this.onBrushEnd.bind(this))
 
     this._chartContainer
+      .call(this._brush)
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
       .on('dblclick', this.zoomOut.bind(this));
   }
 
-  _useZoom(): void {
+  _useScrollZoom(): void {
+    if(this._options.zoom.type !== ZoomType.SCROLL) {
+      return;
+    }
     this._zoom = this._d3.zoom();
     this._zoom
       .scaleExtent([0.5, Infinity])
-      .on('zoom', this.zoomed.bind(this));
+      .on('zoom', this.scrollZoomed.bind(this));
 
     this._svg
       .call(this._zoom);
@@ -282,7 +284,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
           .attr('x', rowWidth)
           .attr('y', this.legendRowPositionY - 12)
           .attr('width', 13)
-          .attr('height', 13)
+          .attr('height', 15)
           .html(`<form><input type=checkbox ${isChecked? 'checked' : ''} /></form>`)
           .on('click', () => {
             this._options.eventsCallbacks.onLegendClick(idx);
@@ -402,10 +404,8 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
     }
   }
 
-  zoomed(): void {
-    if(this._options.renderPanning === true || this._options.zoom.transform === true) {
-      this._chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
-    }
+  scrollZoomed(): void {
+    this._chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
     // const newScaleDomain = this._d3.event.transform.rescaleX(this.xScale).domain();
     // this._options.zoom.x = [newScaleDomain[0].getTime(), newScaleDomain[1].getTime()];
     // this._renderXAxis();
