@@ -1,5 +1,3 @@
-import { randomBytes } from 'crypto';
-
 export function getRandomColor(): string {
   const letters = '0123456789ABCDEF';
   let color = '#';
@@ -9,10 +7,8 @@ export function getRandomColor(): string {
   return color;
 }
 
-export function uid() {
+export function uid(): string {
   const len = 10;
-  return randomBytes(Math.ceil(Math.max(8, len * 2)))
-    .toString('base64')
-    .replace(/[+\/]/g, '')
-    .slice(0, len);
+  // https://stackoverflow.com/a/19964557
+  return Math.random().toString(36).substr(2, len + 2);
 }
