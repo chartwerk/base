@@ -4,6 +4,7 @@
     "rootDir": "./src",
     "module": "esnext",
     "declaration": true,
+    "declarationDir": "dist",
     "allowSyntheticDefaultImports": true,
     "inlineSourceMap": false,
     "sourceMap": true,

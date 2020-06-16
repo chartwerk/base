@@ -690,4 +690,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
   }
 }
 
-export { ChartwerkBase, VueChartwerkBaseMixin };
+export {
+  ChartwerkBase, VueChartwerkBaseMixin,
+  Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType
+};

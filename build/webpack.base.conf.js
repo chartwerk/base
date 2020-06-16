@@ -4,28 +4,10 @@ function resolve(dir) {
   return path.join(__dirname, '..', dir)
 }
 
-// taken from https://medium.com/@vladimirtolstikov/how-to-merge-d-ts-typings-with-dts-bundle-and-webpack-e8903d699576
-function DtsBundlePlugin() { }
-DtsBundlePlugin.prototype.apply = function (compiler) {
-  compiler.plugin('done', function () {
-    var dts = require('dts-bundle');
-
-    dts.bundle({
-      name: '@chartwerk/base',
-      main: 'src/index.d.ts',
-      out: '../dist/index.d.ts',
-      removeSource: true,
-      outputAsModuleFolder: true // to use npm in-package typings
-    });
-  });
-};
-
 module.exports = {
   context: resolve('src'),
   entry: './index.ts',
-  plugins: [
-    new DtsBundlePlugin()
-  ],
+  plugins: [],
   module: {
     rules: [
       {
