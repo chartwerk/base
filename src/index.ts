@@ -279,16 +279,12 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
             this._options.eventsCallbacks.onLegendClick(idx);
           });
 
-        let serieColor = this._series[idx].color;
-        if(serieColor === undefined) {
-          serieColor = colorPalette[idx % colorPalette.length];
-        }
         legendRow.append('text')
           .attr('x', rowWidth + 20)
           .attr('y', this.legendRowPositionY)
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
-          .style('fill', serieColor)
+          .style('fill', this.getSerieColor(idx))
           .text(this._series[idx].target);
       }
     }
@@ -640,6 +636,19 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
   formatedBound(alias: string, target: string): string {
     const confidenceMetric = _.replace(alias, '$__metric_name', target);
     return confidenceMetric;
+  }
+
+  protected getSerieColor(idx: number): string {
+    if(this._series[idx] === undefined) {
+      throw new Error(
+        `Can't get color for unexisting serie: ${idx}, there are only ${this._series.length} series`
+      );
+    }
+    let serieColor = this._series[idx].color;
+    if(serieColor === undefined) {
+      serieColor = colorPalette[idx % colorPalette.length];
+    }
+    return serieColor;
   }
 
   get seriesTargetsWithBounds(): any[] {

@@ -57,6 +57,7 @@ declare abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     get minValue(): number | undefined;
     get maxValue(): number | undefined;
     formatedBound(alias: string, target: string): string;
+    protected getSerieColor(idx: number): string;
     get seriesTargetsWithBounds(): any[];
     get visibleSeries(): any[];
     get rectClipId(): string;
