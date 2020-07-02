@@ -1,5 +1,6 @@
 import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
+import { colorPalette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     protected _d3: typeof d3;
@@ -61,4 +62,4 @@ declare abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     get rectClipId(): string;
     isOutOfChart(): boolean;
 }
-export { ChartwerkBase, VueChartwerkBaseMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType };
+export { ChartwerkBase, VueChartwerkBaseMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, colorPalette };
