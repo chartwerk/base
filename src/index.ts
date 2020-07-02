@@ -49,24 +49,12 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
     el: HTMLElement,
     protected _series: T[] = [],
     // Type 'Options' is not assignable to type 'U'.
-    protected _options: U
+    protected readonly _options: U
   ) {
     // TODO: test if it's necessary
     styles.use();
 
     _.defaults(this._options, DEFAULT_OPTIONS);
-    if(this._options.colors === undefined) {
-      this._options.colors = this._series.map(getRandomColor);
-    }
-
-    const colorsCount = this._options.colors.length;
-    const seriesCount = this._series.length;
-    if(colorsCount < seriesCount) {
-      throw new Error(`
-        Colors count should be greater or equal than series count.
-        Current: colors count (${colorsCount}) < series count (${seriesCount})
-      `);
-    }
     this._d3Node = this._d3.select(el);
   }
 
@@ -295,7 +283,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
           .attr('y', this.legendRowPositionY)
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
-          .style('fill', this._options.colors[idx])
+          .style('fill', this._series[idx].color)
           .text(this._series[idx].target);
       }
     }
