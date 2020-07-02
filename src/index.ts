@@ -3,7 +3,8 @@ import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
 import styles from './css/style.css';
 
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
-import { getRandomColor, uid } from './utils';
+import { uid } from './utils';
+import { colorPalette } from './colors';
 
 // we import only d3 types here
 import * as d3 from 'd3';
@@ -278,12 +279,16 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
             this._options.eventsCallbacks.onLegendClick(idx);
           });
 
+        let serieColor = this._series[idx].color;
+        if(serieColor === undefined) {
+          serieColor = colorPalette[idx % colorPalette.length];
+        }
         legendRow.append('text')
           .attr('x', rowWidth + 20)
           .attr('y', this.legendRowPositionY)
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
-          .style('fill', this._series[idx].color)
+          .style('fill', serieColor)
           .text(this._series[idx].target);
       }
     }
