@@ -4,7 +4,7 @@ import * as d3 from 'd3';
 declare abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     protected _d3: typeof d3;
     protected _series: T[];
-    protected _options: U;
+    protected readonly _options: U;
     protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
