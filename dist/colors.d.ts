@@ -1,1 +1,1 @@
-export declare const colorPalette: string[];
+export declare const palette: string[];

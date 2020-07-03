@@ -1,11 +1,11 @@
 import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
-import { colorPalette } from './colors';
+import { palette } from './colors';
 import * as d3 from 'd3';
-declare abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
+declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     protected _d3: typeof d3;
     protected _series: T[];
-    protected readonly _options: U;
+    protected readonly _options: O;
     protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -13,7 +13,7 @@ declare abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     protected _zoom?: any;
     protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>;
     private clipPathUID;
-    constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: U);
+    constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: O);
     render(): void;
     abstract _renderMetrics(): void;
     abstract onMouseOver(): void;
@@ -63,4 +63,4 @@ declare abstract class ChartwerkBase<T extends TimeSerie, U extends Options> {
     get rectClipId(): string;
     isOutOfChart(): boolean;
 }
-export { ChartwerkBase, VueChartwerkBaseMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, colorPalette };
+export { ChartwerkBase, VueChartwerkBaseMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, palette };

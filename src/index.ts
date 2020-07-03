@@ -4,7 +4,7 @@ import styles from './css/style.css';
 
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
 import { uid } from './utils';
-import { colorPalette } from './colors';
+import { palette } from './colors';
 
 // we import only d3 types here
 import * as d3 from 'd3';
@@ -35,7 +35,7 @@ const DEFAULT_OPTIONS: Options = {
   renderCrosshair: true
 }
 
-abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
+abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
   protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -49,8 +49,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
     protected _d3: typeof d3,
     el: HTMLElement,
     protected _series: T[] = [],
-    // Type 'Options' is not assignable to type 'U'.
-    protected readonly _options: U
+    protected readonly _options: O
   ) {
     // TODO: test if it's necessary
     styles.use();
@@ -646,7 +645,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
     }
     let serieColor = this._series[idx].color;
     if(serieColor === undefined) {
-      serieColor = colorPalette[idx % colorPalette.length];
+      serieColor = palette[idx % palette.length];
     }
     return serieColor;
   }
@@ -695,5 +694,5 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
 export {
   ChartwerkBase, VueChartwerkBaseMixin,
   Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType,
-  colorPalette
+  palette
 };
