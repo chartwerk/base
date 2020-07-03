@@ -9,7 +9,6 @@ export type TimeSerie = {
 // TODO: move some options to line-chart
 export type Options = {
   margin?: Margin;
-  colors?: string[];
   confidence?: number;
   eventsCallbacks?: {
     zoomIn: (range: [number, number] | [[number, number], [number, number]]) => void,

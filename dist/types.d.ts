@@ -13,7 +13,6 @@ export declare type TimeSerie = {
 };
 export declare type Options = {
     margin?: Margin;
-    colors?: string[];
     confidence?: number;
     eventsCallbacks?: {
         zoomIn: (range: [number, number] | [[number, number], [number, number]]) => void;

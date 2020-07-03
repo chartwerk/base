@@ -3,7 +3,8 @@ import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
 import styles from './css/style.css';
 
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
-import { getRandomColor, uid } from './utils';
+import { uid } from './utils';
+import { palette } from './colors';
 
 // we import only d3 types here
 import * as d3 from 'd3';
@@ -34,7 +35,7 @@ const DEFAULT_OPTIONS: Options = {
   renderCrosshair: true
 }
 
-abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
+abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
   protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -48,25 +49,12 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
     protected _d3: typeof d3,
     el: HTMLElement,
     protected _series: T[] = [],
-    // Type 'Options' is not assignable to type 'U'.
-    protected _options: U
+    protected readonly _options: O
   ) {
     // TODO: test if it's necessary
     styles.use();
 
     _.defaults(this._options, DEFAULT_OPTIONS);
-    if(this._options.colors === undefined) {
-      this._options.colors = this._series.map(getRandomColor);
-    }
-
-    const colorsCount = this._options.colors.length;
-    const seriesCount = this._series.length;
-    if(colorsCount < seriesCount) {
-      throw new Error(`
-        Colors count should be greater or equal than series count.
-        Current: colors count (${colorsCount}) < series count (${seriesCount})
-      `);
-    }
     this._d3Node = this._d3.select(el);
   }
 
@@ -295,7 +283,7 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
           .attr('y', this.legendRowPositionY)
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
-          .style('fill', this._options.colors[idx])
+          .style('fill', this.getSerieColor(idx))
           .text(this._series[idx].target);
       }
     }
@@ -649,6 +637,19 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
     return confidenceMetric;
   }
 
+  protected getSerieColor(idx: number): string {
+    if(this._series[idx] === undefined) {
+      throw new Error(
+        `Can't get color for unexisting serie: ${idx}, there are only ${this._series.length} series`
+      );
+    }
+    let serieColor = this._series[idx].color;
+    if(serieColor === undefined) {
+      serieColor = palette[idx % palette.length];
+    }
+    return serieColor;
+  }
+
   get seriesTargetsWithBounds(): any[] {
     if(
       this._options.bounds === undefined ||
@@ -692,5 +693,6 @@ abstract class ChartwerkBase<T extends TimeSerie,U extends Options> {
 
 export {
   ChartwerkBase, VueChartwerkBaseMixin,
-  Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType
+  Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType,
+  palette
 };
