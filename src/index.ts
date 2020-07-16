@@ -154,7 +154,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _renderCrosshair(): void {
-    console.log('ma base');
     if(this._options.renderYaxis === false) {
       return;
     }
