@@ -154,6 +154,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _renderCrosshair(): void {
+    console.log('ma base');
     if(this._options.renderYaxis === false) {
       return;
     }
@@ -170,16 +171,22 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .attr('y1', 0)
       .attr('y2', this.height);
 
-    for(let i = 0; i < this._series.length; i++) {
+    this._series.forEach((serie, idx) => {
       this._crosshair.append('circle')
-        .attr('class', 'crosshair-circle')
-        .attr('id', `crosshair-circle-${i}`)
-        .attr('r', 2)
-        .style('fill', 'none')
-        .style('stroke', 'red')
+        .attr('class', `crosshair-circle crosshair-background crosshair-circle-${idx}`)
+        .attr('r', 9)
+        .style('fill', serie.color)
+        .style('opacity', 0.3)
+        .style('display', 'none');
+
+      this._crosshair.append('circle')
+        .attr('class', `crosshair-circle crosshair-circle-${idx}`)
+        .attr('r', 4)
+        .style('fill', serie.color)
+        .style('stroke', 'white')
         .style('stroke-width', '1px')
         .style('display', 'none');
-    }
+    });
 
     this._chartContainer.append('rect')
       .style('fill', 'none')
