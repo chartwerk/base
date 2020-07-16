@@ -174,14 +174,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       this._crosshair.append('circle')
         .attr('class', `crosshair-circle crosshair-background crosshair-circle-${idx}`)
         .attr('r', 9)
-        .style('fill', serie.color)
+        .style('fill', this.getSerieColor(idx))
         .style('opacity', 0.3)
         .style('display', 'none');
 
       this._crosshair.append('circle')
         .attr('class', `crosshair-circle crosshair-circle-${idx}`)
         .attr('r', 4)
-        .style('fill', serie.color)
+        .style('fill', this.getSerieColor(idx))
         .style('stroke', 'white')
         .style('stroke-width', '1px')
         .style('display', 'none');
