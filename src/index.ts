@@ -65,10 +65,11 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     this._renderGrid();
 
     this._renderClipPath();
-    this._renderMetrics();
-    this._renderCrosshair();
     this._useBrush();
     this._useScrollZoom();
+
+    this._renderMetrics();
+    this._renderCrosshair();
 
     this._renderLegend();
     this._renderYLabel();
