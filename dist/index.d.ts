@@ -1,5 +1,5 @@
 import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat } from './types';
 import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
@@ -37,7 +37,7 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     onBrushEnd(): void;
     scrollZoomed(): void;
     zoomOut(): void;
-    get xScale(): d3.ScaleTime<number, number>;
+    get xScale(): d3.ScaleTime<number, number> | d3.ScaleLinear<number, number>;
     get timestampScale(): d3.ScaleLinear<number, number>;
     get yScale(): d3.ScaleLinear<number, number>;
     get axisBottomWithTicks(): d3.Axis<number | Date | {
@@ -46,7 +46,7 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     get ticksCount(): d3.TimeInterval | number;
     getd3TimeRangeEvery(count: number): d3.TimeInterval;
     get serieTimestampRange(): number | undefined;
-    get timeFormat(): (date: Date) => string;
+    get xAxisTicksFormat(): (d: any) => any;
     get timeInterval(): number;
     get xTickTransform(): string;
     get extraMargin(): Margin;
@@ -63,4 +63,4 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     get rectClipId(): string;
     isOutOfChart(): boolean;
 }
-export { ChartwerkBase, VueChartwerkBaseMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, palette };
+export { ChartwerkBase, VueChartwerkBaseMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, palette };

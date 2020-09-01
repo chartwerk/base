@@ -21,6 +21,14 @@ export declare type Options = {
         mouseOut: () => void;
         onLegendClick: (idx: number) => void;
     };
+    axis?: {
+        x?: {
+            format: AxisFormat;
+        };
+        y?: {
+            format: AxisFormat;
+        };
+    };
     timeInterval?: {
         timeFormat?: TimeFormat;
         count?: number;
@@ -77,4 +85,9 @@ export declare enum ZoomOrientation {
 export declare enum ZoomType {
     BRUSH = "brush",
     SCROLL = "scroll"
+}
+export declare enum AxisFormat {
+    TIME = "time",
+    NUMERIC = "numeric",
+    STRING = "string"
 }
