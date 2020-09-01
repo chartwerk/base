@@ -667,6 +667,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get minValue(): number | undefined {
+    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
+      return undefined;
+    }
     const minValue = _.min(
       this._series
         .filter(serie => serie.visible !== false)
@@ -682,6 +685,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get maxValue(): number | undefined {
+    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
+      return undefined;
+    }
     const maxValue = _.max(
       this._series
         .filter(serie => serie.visible !== false)
