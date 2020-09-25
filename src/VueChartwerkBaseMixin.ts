@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+import has from 'lodash/has';
 
 export default {
   props: {
@@ -42,19 +42,19 @@ export default {
       if(this.options.eventsCallbacks === undefined) {
         this.options.eventsCallbacks = {}
       }
-      if(_.has(this.$listeners, 'zoomIn')) {
+      if(has(this.$listeners, 'zoomIn')) {
         this.options.eventsCallbacks.zoomIn = this.zoomIn.bind(this);
       }
-      if(_.has(this.$listeners, 'zoomOut')) {
+      if(has(this.$listeners, 'zoomOut')) {
         this.options.eventsCallbacks.zoomOut = this.zoomOut.bind(this);
       }
-      if(_.has(this.$listeners, 'mouseMove')) {
+      if(has(this.$listeners, 'mouseMove')) {
         this.options.eventsCallbacks.mouseMove = this.mouseMove.bind(this);
       }
-      if(_.has(this.$listeners, 'mouseOut')) {
+      if(has(this.$listeners, 'mouseOut')) {
         this.options.eventsCallbacks.mouseOut = this.mouseOut.bind(this);
       }
-      if(_.has(this.$listeners, 'onLegendClick')) {
+      if(has(this.$listeners, 'onLegendClick')) {
         this.options.eventsCallbacks.onLegendClick = this.onLegendClick.bind(this);
       }
     },
