@@ -2,7 +2,7 @@ import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
 
 import styles from './css/style.css';
 
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat } from './types';
 import { uid } from './utils';
 import { palette } from './colors';
 
@@ -37,6 +37,11 @@ const DEFAULT_OPTIONS: Options = {
   zoom: {
     type: ZoomType.BRUSH,
     orientation: ZoomOrientation.HORIZONTAL
+  },
+  axis: {
+    x: {
+      format: AxisFormat.TIME
+    }
   },
   renderTicksfromTimestamps: false,
   renderYaxis: true,
@@ -145,7 +150,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .call(
         this.axisBottomWithTicks
           .tickSize(2)
-          .tickFormat(this.timeFormat)
+          .tickFormat(this.xAxisTicksFormat)
       );
     this._chartContainer.select('#x-axis-container').selectAll('.tick').selectAll('text')
       .style('transform', this.xTickTransform);
@@ -372,7 +377,15 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     let yRange: [number, number];
     switch(this._options.zoom.orientation) {
       case ZoomOrientation.HORIZONTAL:
+        if(this._options.axis.x.format === AxisFormat.NUMERIC) {
+          const xAxisStartValue = this.yScale.invert(extent[0]);
+          const xAxisEndValue = this.yScale.invert(extent[1]);
+          yRange = [xAxisStartValue, xAxisEndValue]; 
+          break;
+        }
+        // @ts-ignore
         const startTimestamp = this.xScale.invert(extent[0]).getTime();
+        // @ts-ignore
         const endTimestamp = this.xScale.invert(extent[1]).getTime();
         if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
           return;
@@ -386,7 +399,15 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         yRange = [upperY, bottomY];
         break;
       case ZoomOrientation.BOTH:
+        if(this._options.axis.x.format === AxisFormat.NUMERIC) {
+          const xAxisStartValue = this.yScale.invert(extent[0][0]);
+          const xAxisEndValue = this.yScale.invert(extent[1][0]);
+          yRange = [xAxisStartValue, xAxisEndValue];
+          break;
+        }
+        // @ts-ignore
         const bothStartTimestamp = this.xScale.invert(extent[0][0]).getTime();
+        // @ts-ignore
         const bothEndTimestamp = this.xScale.invert(extent[1][0]).getTime();
         const bothUpperY = this.yScale.invert(extent[0][1]);
         const bothBottomY = this.yScale.invert(extent[1][1]);
@@ -423,15 +444,18 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isOutOfChart() === true) {
       return;
     }
-    const midTimestamp = this.xScale.invert(this.width / 2).getTime();
+    let xAxisMiddleValue = this.xScale.invert(this.width / 2);
+    if(this._options.axis.x.format === AxisFormat.TIME) {
+      xAxisMiddleValue = (xAxisMiddleValue as Date).getTime();
+    }
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomOut !== undefined) {
-      this._options.eventsCallbacks.zoomOut(midTimestamp);
+      this._options.eventsCallbacks.zoomOut(xAxisMiddleValue as number);
     } else {
       console.log('zoom out, but there is no callback');
     }
   }
 
-  get xScale(): d3.ScaleTime<number, number> {
+  get xScale(): d3.ScaleTime<number, number> | d3.ScaleLinear<number, number> {
     if(this._options.zoom.x !== undefined && this._options.zoom.x.length > 1) {
       return this._d3.scaleTime()
       .domain([
@@ -449,13 +473,27 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         ])
         .range([0, this.width]);
     }
-    // TODO: add timezone (utc / browser) to options and use it
-    return this._d3.scaleTime()
-      .domain([
-        new Date(first(this._series[0].datapoints)[1]),
-        new Date(last(this._series[0].datapoints)[1])
-      ])
-      .range([0, this.width]);
+    switch (this._options.axis.x.format) {
+      case AxisFormat.TIME:
+        // TODO: add timezone (utc / browser) to options and use it
+        return this._d3.scaleTime()
+          .domain([
+            new Date(first(this._series[0].datapoints)[1]),
+            new Date(last(this._series[0].datapoints)[1])
+          ])
+          .range([0, this.width]);
+      case AxisFormat.NUMERIC:
+        return this._d3.scaleLinear()
+          .domain([
+            first(this._series[0].datapoints)[1],
+            last(this._series[0].datapoints)[1]
+          ])
+          .range([0, this.width]);
+      case AxisFormat.STRING:
+        // TODO: add string/symbol format
+      default:
+        throw new Error(`Unknown time format for x-axis: ${this._options.axis.x.format}`);
+    }
   }
 
   get timestampScale(): d3.ScaleLinear<number, number> {
@@ -498,11 +536,21 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get ticksCount(): d3.TimeInterval | number {
-    if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
-      // TODO: add max ticks limit
-      return this.getd3TimeRangeEvery(this._options.timeInterval.count);
+    if(this._options.timeInterval === undefined || this._options.timeInterval.count === undefined) {
+      return 5;
     }
-    return 5;
+    // TODO: add max ticks limit
+    switch(this._options.axis.x.format) {
+      case AxisFormat.TIME:
+        return this.getd3TimeRangeEvery(this._options.timeInterval.count);;
+      case AxisFormat.NUMERIC:
+        // TODO: find a better way
+        return this._options.timeInterval.count;
+      case AxisFormat.STRING:
+      // TODO: add string/symbol format
+      default:
+        throw new Error(`Unknown time format for x-axis: ${this._options.axis.x.format}`);
+    }
   }
 
   getd3TimeRangeEvery(count: number): d3.TimeInterval {
@@ -536,11 +584,20 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     return (endTimestamp - startTimestamp) / 1000;
   }
 
-  get timeFormat(): (date: Date) => string {
-    if(this._options.tickFormat !== undefined && this._options.tickFormat.xAxis !== undefined) {
-      return this._d3.timeFormat(this._options.tickFormat.xAxis);
+  get xAxisTicksFormat() {
+    switch(this._options.axis.x.format) {
+      case AxisFormat.TIME:
+        if(this._options.tickFormat !== undefined && this._options.tickFormat.xAxis !== undefined) {
+          return this._d3.timeFormat(this._options.tickFormat.xAxis);
+        }
+        return this._d3.timeFormat('%m/%d %H:%M');
+      case AxisFormat.NUMERIC:
+        return (d) => d;
+      case AxisFormat.STRING:
+        // TODO: add string/symbol format
+      default:
+        throw new Error(`Unknown time format for x-axis: ${this._options.axis.x.format}`);
     }
-    return this._d3.timeFormat('%m/%d %H:%M');
   }
 
   get timeInterval(): number {
@@ -621,6 +678,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get minValue(): number | undefined {
+    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
+      return undefined;
+    }
     const minValue = min(
       this._series
         .filter(serie => serie.visible !== false)
@@ -636,6 +696,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get maxValue(): number | undefined {
+    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
+      return undefined;
+    }
     const maxValue = max(
       this._series
         .filter(serie => serie.visible !== false)
@@ -711,6 +774,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
 
 export {
   ChartwerkBase, VueChartwerkBaseMixin,
-  Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType,
+  Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat,
   palette
 };
