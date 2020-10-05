@@ -8,7 +8,18 @@ import { palette } from './colors';
 
 // we import only d3 types here
 import * as d3 from 'd3';
-import * as _ from 'lodash';
+
+import defaults from 'lodash/defaults';
+import includes from 'lodash/includes';
+import first from 'lodash/first';
+import last from 'lodash/last';
+import mergeWith from 'lodash/mergeWith';
+import min from 'lodash/min';
+import minBy from 'lodash/minBy';
+import max from 'lodash/max';
+import maxBy from 'lodash/maxBy';
+import add from 'lodash/add';
+import replace from 'lodash/replace'
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -59,7 +70,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     // TODO: test if it's necessary
     styles.use();
 
-    _.defaults(this._options, DEFAULT_OPTIONS);
+    defaults(this._options, DEFAULT_OPTIONS);
     this._d3Node = this._d3.select(el);
   }
 
@@ -269,7 +280,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         .append('g')
         .attr('class', 'legend-row');
       for(let idx = 0; idx < this._series.length; idx++) {
-        if(_.includes(this.seriesTargetsWithBounds, this._series[idx].target)) {
+        if(includes(this.seriesTargetsWithBounds, this._series[idx].target)) {
           continue;
         }
         let node = legendRow.selectAll('text').node();
@@ -467,15 +478,15 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         // TODO: add timezone (utc / browser) to options and use it
         return this._d3.scaleTime()
           .domain([
-            new Date(_.first(this._series[0].datapoints)[1]),
-            new Date(_.last(this._series[0].datapoints)[1])
+            new Date(first(this._series[0].datapoints)[1]),
+            new Date(last(this._series[0].datapoints)[1])
           ])
           .range([0, this.width]);
       case AxisFormat.NUMERIC:
         return this._d3.scaleLinear()
           .domain([
-            _.first(this._series[0].datapoints)[1],
-            _.last(this._series[0].datapoints)[1]
+            first(this._series[0].datapoints)[1],
+            last(this._series[0].datapoints)[1]
           ])
           .range([0, this.width]);
       case AxisFormat.STRING:
@@ -488,8 +499,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   get timestampScale(): d3.ScaleLinear<number, number> {
     return this._d3.scaleLinear()
       .domain([
-        _.first(this._series[0].datapoints)[1],
-        _.last(this._series[0].datapoints)[1]
+        first(this._series[0].datapoints)[1],
+        last(this._series[0].datapoints)[1]
       ])
       .range([0, this.width])
   }
@@ -568,8 +579,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this._series.length === 0) {
       return undefined;
     }
-    const startTimestamp = _.first(this._series[0].datapoints)[1];
-    const endTimestamp = _.last(this._series[0].datapoints)[1];
+    const startTimestamp = first(this._series[0].datapoints)[1];
+    const endTimestamp = last(this._series[0].datapoints)[1];
     return (endTimestamp - startTimestamp) / 1000;
   }
 
@@ -663,18 +674,18 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this._options.margin !== undefined) {
       return this._options.margin;
     }
-    return _.mergeWith({}, DEFAULT_MARGIN, this.extraMargin, _.add);
+    return mergeWith({}, DEFAULT_MARGIN, this.extraMargin, add);
   }
 
   get minValue(): number | undefined {
     if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
       return undefined;
     }
-    const minValue = _.min(
+    const minValue = min(
       this._series
         .filter(serie => serie.visible !== false)
         .map(
-          serie => _.minBy<number[]>(serie.datapoints, dp => dp[0])[0]
+          serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
         )
     );
 
@@ -688,11 +699,11 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
       return undefined;
     }
-    const maxValue = _.max(
+    const maxValue = max(
       this._series
         .filter(serie => serie.visible !== false)
         .map(
-          serie => _.maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
+          serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
         )
     );
 
@@ -703,7 +714,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   formatedBound(alias: string, target: string): string {
-    const confidenceMetric = _.replace(alias, '$__metric_name', target);
+    const confidenceMetric = replace(alias, '$__metric_name', target);
     return confidenceMetric;
   }
 
