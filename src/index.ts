@@ -1,4 +1,5 @@
 import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
+import { BaseState } from './state';
 
 import styles from './css/style.css';
 
@@ -61,7 +62,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
   protected _brush?: d3.BrushBehavior<unknown>;
   protected _zoom?: any;
-  protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>;
+  protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>; 
+  protected _state?: BaseState;
   private clipPathUID = '';
 
   constructor(
@@ -76,6 +78,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
 
     // TODO: update defaults(we have defaults for option: { foo: ..., bar: ... }, user pass option: { foo: ... }, so bar has no defaults)
     defaults(this._options, DEFAULT_OPTIONS);
+    // TODO: mb move it to render();
+    this._initBaseState();
     this._d3Node = this._d3.select(el);
   }
 
@@ -103,6 +107,10 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   abstract onMouseMove(): void;
   public abstract renderSharedCrosshair(timestamp: number): void;
   public abstract hideSharedCrosshair(): void;
+
+  _initBaseState() {
+    this._state = new BaseState(this._options);
+  }
 
   _renderSvg(): void {
     this._d3Node.select('svg').remove();
@@ -479,8 +487,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
-    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
-      return min(this._options.axis.y.range);
+    console.log('this._state', this._state);
+    if(this._state.yValueRange !== undefined) {
+      return min(this._state.yValueRange);
     }
     const minValue = min(
       this._series
@@ -497,8 +506,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[1];
     }
-    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
-      return max(this._options.axis.y.range);
+    if(this._state.yValueRange !== undefined) {
+      return max(this._state.yValueRange);
     }
     const maxValue = max(
       this._series
@@ -514,8 +523,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
-    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
-      return min(this._options.axis.x.range);
+    if(this._state.xValueRange !== undefined) {
+      return min(this._state.xValueRange);
     }
     const minValue = min(
       this._series
@@ -531,8 +540,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[1];
     }
-    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
-      return max(this._options.axis.x.range);
+    if(this._state.xValueRange !== undefined) {
+      return max(this._state.xValueRange);
     }
     const maxValue = max(
       this._series
