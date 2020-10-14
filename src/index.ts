@@ -25,6 +25,7 @@ import replace from 'lodash/replace'
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
 const DEFAULT_TICK_COUNT = 4;
 const MILISECONDS_IN_MINUTE = 60 * 1000;
+const DEFAULT_AXIS_RANGE = [0, 1];
 const DEFAULT_OPTIONS: Options = {
   confidence: 0,
   timeInterval: {
@@ -41,6 +42,9 @@ const DEFAULT_OPTIONS: Options = {
   axis: {
     x: {
       format: AxisFormat.TIME
+    },
+    y: {
+      format: AxisFormat.NUMERIC
     }
   },
   renderTicksfromTimestamps: false,
@@ -70,6 +74,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     // TODO: test if it's necessary
     styles.use();
 
+    // TODO: update defaults(we have defaults for option: { foo: ..., bar: ... }, user pass option: { foo: ... }, so bar has no defaults)
     defaults(this._options, DEFAULT_OPTIONS);
     this._d3Node = this._d3.select(el);
   }
@@ -383,10 +388,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           yRange = [xAxisStartValue, xAxisEndValue]; 
           break;
         }
-        // @ts-ignore
-        const startTimestamp = this.xScale.invert(extent[0]).getTime();
-        // @ts-ignore
-        const endTimestamp = this.xScale.invert(extent[1]).getTime();
+        const startTimestamp = this.xScale.invert(extent[0]);
+        const endTimestamp = this.xScale.invert(extent[1]);
         if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
           return;
         }
@@ -405,10 +408,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           yRange = [xAxisStartValue, xAxisEndValue];
           break;
         }
-        // @ts-ignore
-        const bothStartTimestamp = this.xScale.invert(extent[0][0]).getTime();
-        // @ts-ignore
-        const bothEndTimestamp = this.xScale.invert(extent[1][0]).getTime();
+        const bothStartTimestamp = this.xScale.invert(extent[0][0]);
+        const bothEndTimestamp = this.xScale.invert(extent[1][0]);
         const bothUpperY = this.yScale.invert(extent[0][1]);
         const bothBottomY = this.yScale.invert(extent[1][1]);
         if(Math.abs(bothStartTimestamp - bothEndTimestamp) < this.timeInterval) {
@@ -445,9 +446,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       return;
     }
     let xAxisMiddleValue = this.xScale.invert(this.width / 2);
-    if(this._options.axis.x.format === AxisFormat.TIME) {
-      xAxisMiddleValue = (xAxisMiddleValue as Date).getTime();
-    }
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomOut !== undefined) {
       this._options.eventsCallbacks.zoomOut(xAxisMiddleValue as number);
     } else {
@@ -455,75 +453,95 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     }
   }
 
-  get xScale(): d3.ScaleTime<number, number> | d3.ScaleLinear<number, number> {
-    if(this._options.zoom.x !== undefined && this._options.zoom.x.length > 1) {
-      return this._d3.scaleTime()
-      .domain([
-        new Date(this._options.zoom.x[0]),
-        new Date(this._options.zoom.x[1])
-      ])
-      .range([0, this.width]);
+  get xScale(): d3.ScaleLinear<number, number> {
+    let domain = [this.minValueX, this.maxValueX];
+    if(this._options.axis.x !== undefined && this._options.axis.x.invert === true) {
+      domain = [this.maxValueX, this.minValueX];
     }
-    if((this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) &&
-      this._options.timeRange !== undefined) {
-      return this._d3.scaleTime()
-        .domain([
-          new Date(this._options.timeRange.from),
-          new Date(this._options.timeRange.to)
-        ])
-        .range([0, this.width]);
-    }
-    switch (this._options.axis.x.format) {
-      case AxisFormat.TIME:
-        // TODO: add timezone (utc / browser) to options and use it
-        return this._d3.scaleTime()
-          .domain([
-            new Date(first(this._series[0].datapoints)[1]),
-            new Date(last(this._series[0].datapoints)[1])
-          ])
-          .range([0, this.width]);
-      case AxisFormat.NUMERIC:
-        return this._d3.scaleLinear()
-          .domain([
-            first(this._series[0].datapoints)[1],
-            last(this._series[0].datapoints)[1]
-          ])
-          .range([0, this.width]);
-      case AxisFormat.STRING:
-        // TODO: add string/symbol format
-      default:
-        throw new Error(`Unknown time format for x-axis: ${this._options.axis.x.format}`);
-    }
-  }
-
-  get timestampScale(): d3.ScaleLinear<number, number> {
     return this._d3.scaleLinear()
-      .domain([
-        first(this._series[0].datapoints)[1],
-        last(this._series[0].datapoints)[1]
-      ])
-      .range([0, this.width])
+      .domain(domain)
+      .range([0, this.width]);
   }
 
   get yScale(): d3.ScaleLinear<number, number> {
-    if(this._options.zoom.y !== undefined && this._options.zoom.y.length > 1) {
-      return this._d3.scaleLinear()
-        .domain(this._options.zoom.y)
-        .range([0, this.height]);
+    // inversed by default, because d3 y starts from top to bottom
+    let domain = [this.maxValue, this.minValue]; 
+    if(this._options.axis.y !== undefined && this._options.axis.y.invert === true) {
+      domain = [this.minValue, this.maxValue];
     }
-    if(
-      this.minValue === undefined ||
-      this.maxValue === undefined
-    ) {
-      return this._d3.scaleLinear()
-        // TODO: why [100, 0]?
-        .domain([100, 0])
-        .range([0, this.height]);
-    }
-
     return this._d3.scaleLinear()
-      .domain([this.maxValue, this.minValue])
+      .domain(domain)
       .range([0, this.height]);
+  }
+
+  get minValue(): number {
+    // y min value
+    if(this.isSeriesUnavailable) {
+      return DEFAULT_AXIS_RANGE[0];
+    }
+    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
+      return min(this._options.axis.y.range);
+    }
+    const minValue = min(
+      this._series
+        .filter(serie => serie.visible !== false)
+        .map(
+          serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
+    );
+    return minValue;
+  }
+
+  get maxValue(): number | undefined {
+    // y max value
+    if(this.isSeriesUnavailable) {
+      return DEFAULT_AXIS_RANGE[1];
+    }
+    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
+      return max(this._options.axis.y.range);
+    }
+    const maxValue = max(
+      this._series
+        .filter(serie => serie.visible !== false)
+        .map(
+          serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
+        )
+    );
+    return maxValue;
+  }
+
+  get minValueX(): number {
+    if(this.isSeriesUnavailable) {
+      return DEFAULT_AXIS_RANGE[0];
+    }
+    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
+      return min(this._options.axis.x.range);
+    }
+    const minValue = min(
+      this._series
+        .filter(serie => serie.visible !== false)
+        .map(
+          serie => minBy<number[]>(serie.datapoints, dp => dp[1])[1]
+        )
+    );
+    return minValue;
+  }
+
+  get maxValueX(): number {
+    if(this.isSeriesUnavailable) {
+      return DEFAULT_AXIS_RANGE[1];
+    }
+    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
+      return max(this._options.axis.x.range);
+    }
+    const maxValue = max(
+      this._series
+        .filter(serie => serie.visible !== false)
+        .map(
+          serie => maxBy<number[]>(serie.datapoints, dp => dp[1])[1]
+        )
+    );
+    return maxValue;
   }
 
   get axisBottomWithTicks(): d3.Axis<number | Date | { valueOf(): number }> {
@@ -677,40 +695,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     return mergeWith({}, DEFAULT_MARGIN, this.extraMargin, add);
   }
 
-  get minValue(): number | undefined {
-    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
-      return undefined;
-    }
-    const minValue = min(
-      this._series
-        .filter(serie => serie.visible !== false)
-        .map(
-          serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
-        )
-    );
-
-    if(minValue === undefined) {
-      return undefined;
-    }
-    return minValue - this._options.confidence;
-  }
-
-  get maxValue(): number | undefined {
-    if(this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0) {
-      return undefined;
-    }
-    const maxValue = max(
-      this._series
-        .filter(serie => serie.visible !== false)
-        .map(
-          serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
-        )
-    );
-
-    if(maxValue === undefined) {
-      return undefined;
-    }
-    return maxValue + this._options.confidence;
+  get isSeriesUnavailable(): boolean {
+    // TODO: Use one && throw error
+    return this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0;
   }
 
   formatedBound(alias: string, target: string): string {

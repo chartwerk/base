@@ -20,9 +20,13 @@ export type Options = {
   axis?: {
     x?: {
       format: AxisFormat;
+      range?: [number, number];
+      invert?: boolean;
     },
     y?: {
       format: AxisFormat;
+      range?: [number, number];
+      invert?: boolean;
     }
   }
   timeInterval?: {
