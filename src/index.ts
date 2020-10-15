@@ -388,11 +388,13 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _onPanningZoom(event) {
-    console.log('_onPanningZoom', event);
-
-    this._state.xValueRange = [this.minValueX + event.transform.x, this.maxValueX + event.transform.x];
-    this._state.yValueRange = [this.minValue + event.transform.y, this.maxValue + event.transform.y];
-    // TODO: add metric container
+    // TODO: add scroll zoom
+    
+    const transformX = this.defaultXScale.invert(event.transform.x);
+    const transformY = this.defaultYScale.invert(event.transform.y);
+    console.log('_onPanningZoom', event.transform.x, transformX, this.minValueX);
+    this._state.xValueRange = [this.minValueX - transformX, this.maxValueX - transformX];
+    this._state.yValueRange = [this.minValue - transformY, this.maxValue - transformY];
     this._chartContainer.selectAll('.metric-element')
       .attr('transform', `translate(${event.transform.x},${event.transform.y})`);
     this._renderXAxis();
@@ -400,7 +402,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _onPanningEnd() {
-    console.log('_onPanningEnd', this._d3.event);
+    console.log('on panning end, but there is no callback');
   }
 
   onBrushStart(): void {
@@ -493,6 +495,20 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     } else {
       console.log('zoom out, but there is no callback');
     }
+  }
+
+  get defaultXScale(): d3.ScaleLinear<number, number> {
+    const domain = [0, Math.abs(this.maxValueX - this.minValueX)];
+    return this._d3.scaleLinear()
+      .domain(domain)
+      .range([0, this.width]);
+  }
+
+  get defaultYScale(): d3.ScaleLinear<number, number> {
+    const domain = [0, Math.abs(this.maxValue - this.minValue)];
+    return this._d3.scaleLinear()
+      .domain(domain)
+      .range([0, this.height]);
   }
 
   get xScale(): d3.ScaleLinear<number, number> {
