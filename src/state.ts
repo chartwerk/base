@@ -1,10 +1,46 @@
-import { Options } from './types';
+import { Options, TimeFormat, TickOrientation, ZoomType, ZoomOrientation, AxisFormat } from './types';
 
 import lodashGet from 'lodash/get';
+
+const DEFAULT_OPTIONS: Options = {
+  confidence: 0,
+  timeInterval: {
+    timeFormat: TimeFormat.MINUTE
+  },
+  tickFormat: {
+    xAxis: '%H:%M',
+    xTickOrientation: TickOrientation.HORIZONTAL
+  },
+  zoom: {
+    type: ZoomType.BRUSH,
+    orientation: ZoomOrientation.HORIZONTAL
+  },
+  axis: {
+    x: {
+      format: AxisFormat.TIME
+    },
+    y: {
+      format: AxisFormat.NUMERIC
+    }
+  },
+  renderTicksfromTimestamps: false,
+  renderYaxis: true,
+  renderXaxis: true,
+  renderGrid: true,
+  renderLegend: true,
+  renderCrosshair: true
+}
+
+const DEFAULT_TRANSFORM = {
+  x: 0,
+  y: 0,
+  k: 1
+}
 
 export class BaseState {
   private _xValueRange: [number, number] | undefined = undefined;
   private _yValueRange: [number, number] | undefined = undefined;
+  private _transform: { x: number, y: number, k: number } = DEFAULT_TRANSFORM;
 
   constructor(
     options: Options
@@ -26,6 +62,6 @@ export class BaseState {
   }
 
   set yValueRange(range: [number, number]) {
-    this.yValueRange = range;
+    this._yValueRange = range;
   }
 }

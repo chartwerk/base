@@ -20,7 +20,8 @@ import minBy from 'lodash/minBy';
 import max from 'lodash/max';
 import maxBy from 'lodash/maxBy';
 import add from 'lodash/add';
-import replace from 'lodash/replace'
+import replace from 'lodash/replace';
+import debounce from 'lodash/debounce';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -64,6 +65,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   protected _zoom?: any;
   protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>; 
   protected _state?: BaseState;
+  protected _clipPath?: any;
   private clipPathUID = '';
 
   constructor(
@@ -173,6 +175,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this._options.renderYaxis === false) {
       return;
     }
+    this._chartContainer.select('#y-axis-container').remove();
     this._chartContainer
       .append('g')
       .attr('id', 'y-axis-container')
@@ -248,12 +251,27 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         [this.width, this.height]
       ])
       .handleSize(20)
-      // .filter(() => !this._d3.event.shiftKey)
+      .filter(() => !this._d3.event.shiftKey)
       .on('start', this.onBrushStart.bind(this))
       .on('end', this.onBrushEnd.bind(this))
+  
+    const shiftPan = (event) => {
+      debounce(this._onPanningZoom.bind(this, event), 10)()
+    };
+
+    const pan = this._d3.zoom()
+      .filter(() => this._d3.event.shiftKey)
+      .on('zoom', () => {
+        // console.log('on zoom', this._d3.event);
+        this._onPanningZoom(this._d3.event);
+      })
+      .on('end', () => {
+        this._onPanningEnd();
+      })
 
     this._chartContainer
       .call(this._brush)
+      .call(pan)
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
@@ -274,14 +292,13 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _renderClipPath(): void {
-    this._chartContainer
-      .append('clipPath')
+    this._clipPath = this._chartContainer.append('defs').append('SVG:clipPath')
       .attr('id', this.rectClipId)
-      .append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
+      .append('SVG:rect')
       .attr('width', this.width)
       .attr('height', this.height)
+      .attr('x', 0)
+      .attr('y', 0);
   }
 
   _renderLegend(): void {
@@ -370,6 +387,22 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .text('No data points');
   }
 
+  _onPanningZoom(event) {
+    console.log('_onPanningZoom', event);
+
+    this._state.xValueRange = [this.minValueX + event.transform.x, this.maxValueX + event.transform.x];
+    this._state.yValueRange = [this.minValue + event.transform.y, this.maxValue + event.transform.y];
+    // TODO: add metric container
+    this._chartContainer.selectAll('.metric-element')
+      .attr('transform', `translate(${event.transform.x},${event.transform.y})`);
+    this._renderXAxis();
+    this._renderYAxis();
+  }
+
+  _onPanningEnd() {
+    console.log('_onPanningEnd', this._d3.event);
+  }
+
   onBrushStart(): void {
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.mouseOut() !== undefined) {
       this._options.eventsCallbacks.mouseOut();
@@ -380,6 +413,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
 
   onBrushEnd(): void {
     const extent = this._d3.event.selection;
+    console.log('brush end', extent);
     if(extent === undefined || extent === null || extent.length < 2) {
       return;
     }
@@ -462,10 +496,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get xScale(): d3.ScaleLinear<number, number> {
-    let domain = [this.minValueX, this.maxValueX];
-    if(this._options.axis.x !== undefined && this._options.axis.x.invert === true) {
-      domain = [this.maxValueX, this.minValueX];
-    }
+    const domain = this._state.xValueRange || [this.minValueX, this.maxValueX];
     return this._d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
@@ -473,10 +504,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
 
   get yScale(): d3.ScaleLinear<number, number> {
     // inversed by default, because d3 y starts from top to bottom
-    let domain = [this.maxValue, this.minValue]; 
-    if(this._options.axis.y !== undefined && this._options.axis.y.invert === true) {
-      domain = [this.minValue, this.maxValue];
-    }
+    const domain = this._state.yValueRange || [this.maxValue, this.minValue];
     return this._d3.scaleLinear()
       .domain(domain)
       .range([0, this.height]);
@@ -487,9 +515,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
-    console.log('this._state', this._state);
-    if(this._state.yValueRange !== undefined) {
-      return min(this._state.yValueRange);
+    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
+      return min(this._options.axis.y.range)
     }
     const minValue = min(
       this._series
@@ -501,13 +528,13 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     return minValue;
   }
 
-  get maxValue(): number | undefined {
+  get maxValue(): number {
     // y max value
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[1];
     }
-    if(this._state.yValueRange !== undefined) {
-      return max(this._state.yValueRange);
+    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
+      return max(this._options.axis.y.range)
     }
     const maxValue = max(
       this._series
@@ -523,8 +550,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
-    if(this._state.xValueRange !== undefined) {
-      return min(this._state.xValueRange);
+    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
+      return min(this._options.axis.x.range)
     }
     const minValue = min(
       this._series
@@ -540,8 +567,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[1];
     }
-    if(this._state.xValueRange !== undefined) {
-      return max(this._state.xValueRange);
+    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
+      return max(this._options.axis.x.range)
     }
     const maxValue = max(
       this._series
