@@ -1,4 +1,5 @@
 import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
+import { BaseState } from './state';
 import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat } from './types';
 import { palette } from './colors';
 import * as d3 from 'd3';
@@ -12,6 +13,10 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     protected _brush?: d3.BrushBehavior<unknown>;
     protected _zoom?: any;
     protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>;
+    protected _state?: BaseState;
+    protected _clipPath?: any;
+    protected _isPanning: boolean;
+    protected _isBrushing: boolean;
     private clipPathUID;
     constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: O);
     render(): void;
@@ -21,6 +26,7 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     abstract onMouseMove(): void;
     abstract renderSharedCrosshair(timestamp: number): void;
     abstract hideSharedCrosshair(): void;
+    _initBaseState(): void;
     _renderSvg(): void;
     _renderGrid(): void;
     _renderXAxis(): void;
@@ -33,13 +39,20 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     _renderYLabel(): void;
     _renderXLabel(): void;
     _renderNoDataPointsMessage(): void;
+    _onPanningZoom(event: any): void;
+    _onPanningEnd(): void;
     onBrushStart(): void;
     onBrushEnd(): void;
     scrollZoomed(): void;
     zoomOut(): void;
-    get xScale(): d3.ScaleTime<number, number> | d3.ScaleLinear<number, number>;
-    get timestampScale(): d3.ScaleLinear<number, number>;
+    get defaultXScale(): d3.ScaleLinear<number, number>;
+    get defaultYScale(): d3.ScaleLinear<number, number>;
+    get xScale(): d3.ScaleLinear<number, number>;
     get yScale(): d3.ScaleLinear<number, number>;
+    get minValue(): number;
+    get maxValue(): number;
+    get minValueX(): number;
+    get maxValueX(): number;
     get axisBottomWithTicks(): d3.Axis<number | Date | {
         valueOf(): number;
     }>;
@@ -54,8 +67,7 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     get height(): number;
     get legendRowPositionY(): number;
     get margin(): Margin;
-    get minValue(): number | undefined;
-    get maxValue(): number | undefined;
+    get isSeriesUnavailable(): boolean;
     formatedBound(alias: string, target: string): string;
     protected getSerieColor(idx: number): string;
     get seriesTargetsWithBounds(): any[];
