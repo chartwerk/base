@@ -11,7 +11,7 @@ export type Options = {
   margin?: Margin;
   confidence?: number;
   eventsCallbacks?: {
-    zoomIn: (range: [number, number] | [[number, number], [number, number]]) => void,
+    zoomIn: (range:[[number, number] | undefined, [number, number] | undefined]) => void,
     zoomOut: (center: number) => void,
     mouseMove: (evt: any) => void,
     mouseOut: () => void,
@@ -28,6 +28,10 @@ export type Options = {
       range?: [number, number];
       invert?: boolean;
     }
+  };
+  crosshair?: {
+    orientation?: CrosshairOrientation;
+    color?: string;
   }
   timeInterval?: {
     timeFormat?: TimeFormat;
@@ -90,4 +94,9 @@ export enum AxisFormat {
   TIME = 'time',
   NUMERIC = 'numeric',
   STRING = 'string'
+}
+export enum CrosshairOrientation {
+  VERTICAL = 'vertical',
+  HORIZONTAL = 'horizontal',
+  BOTH = 'both'
 }

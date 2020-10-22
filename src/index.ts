@@ -3,7 +3,7 @@ import { BaseState } from './state';
 
 import styles from './css/style.css';
 
-import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat } from './types';
+import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, CrosshairOrientation } from './types';
 import { uid } from './utils';
 import { palette } from './colors';
 
@@ -21,7 +21,6 @@ import max from 'lodash/max';
 import maxBy from 'lodash/maxBy';
 import add from 'lodash/add';
 import replace from 'lodash/replace';
-import debounce from 'lodash/debounce';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -49,6 +48,10 @@ const DEFAULT_OPTIONS: Options = {
       format: AxisFormat.NUMERIC
     }
   },
+  crosshair: {
+    orientation: CrosshairOrientation.VERTICAL,
+    color: 'red'
+  },
   renderTicksfromTimestamps: false,
   renderYaxis: true,
   renderXaxis: true,
@@ -66,6 +69,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>; 
   protected _state?: BaseState;
   protected _clipPath?: any;
+  protected _isPanning = false;
+  protected _isBrushing = false;
   private clipPathUID = '';
 
   constructor(
@@ -95,8 +100,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     this._useBrush();
     this._useScrollZoom();
 
-    this._renderMetrics();
     this._renderCrosshair();
+    this._renderMetrics();
 
     this._renderLegend();
     this._renderYLabel();
@@ -130,6 +135,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this._options.renderGrid === false) {
       return;
     }
+    this._chartContainer.selectAll('.grid').remove();
+
     this._chartContainer
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
@@ -151,6 +158,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
 
     this._chartContainer.selectAll('.grid').selectAll('.tick')
       .attr('opacity', '0.5');
+
+    this._chartContainer.selectAll('.grid').select('.domain')
+      .style('pointer-events', 'none');
   }
 
   _renderXAxis(): void {
@@ -194,43 +204,46 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .attr('id', 'crosshair-container')
       .style('display', 'none');
 
-    this._crosshair.append('line')
-      .attr('class', 'crosshair-line')
-      .attr('id', 'crosshair-line-x')
-      .attr('fill', 'red')
-      .attr('stroke', 'red')
-      .attr('stroke-width', '1px')
-      .attr('y1', 0)
-      .attr('y2', this.height);
+    if(
+      this._options.crosshair.orientation === CrosshairOrientation.VERTICAL ||
+      this._options.crosshair.orientation === CrosshairOrientation.BOTH
+    ) {
+      this._crosshair.append('line')
+        .attr('class', 'crosshair-line')
+        .attr('id', 'crosshair-line-x')
+        .attr('fill', this._options.crosshair.color)
+        .attr('stroke', this._options.crosshair.color)
+        .attr('stroke-width', '1px')
+        .attr('y1', 0)
+        .attr('y2', this.height)
+        .style('pointer-events', 'none');
+    }
+    if(
+      this._options.crosshair.orientation === CrosshairOrientation.HORIZONTAL ||
+      this._options.crosshair.orientation === CrosshairOrientation.BOTH
+    ) {
+      this._crosshair.append('line')
+        .attr('class', 'crosshair-line')
+        .attr('id', 'crosshair-line-y')
+        .attr('fill', this._options.crosshair.color)
+        .attr('stroke', this._options.crosshair.color)
+        .attr('stroke-width', '1px')
+        .attr('x1', 0)
+        .attr('x2', this.width)
+        .style('pointer-events', 'none');
+    }
 
-    this._series.forEach((serie, idx) => {
-      this._crosshair.append('circle')
-        .attr('class', `crosshair-circle crosshair-background crosshair-circle-${idx}`)
-        .attr('r', 9)
-        .style('fill', this.getSerieColor(idx))
-        .style('opacity', 0.3)
-        .style('display', 'none');
-
-      this._crosshair.append('circle')
-        .attr('class', `crosshair-circle crosshair-circle-${idx}`)
-        .attr('r', 4)
-        .style('fill', this.getSerieColor(idx))
-        .style('stroke', 'white')
-        .style('stroke-width', '1px')
-        .style('display', 'none');
-    });
-
-    this._chartContainer.append('rect')
-      .style('fill', 'none')
-      .style('stroke', 'none')
-      .style('pointer-events', 'all')
-      .style('cursor', 'crosshair')
-      .attr('width', this.width)
-      .attr('height', this.height);
+    this._crosshair.append('circle')
+      .attr('class', `crosshair-circle crosshair-background`)
+      .attr('r', 9)
+      .attr('clip-path', `url(#${this.rectClipId})`)
+      .style('opacity', 0.3)
+      .style('display', 'none')
+      .style('pointer-events', 'none');
   }
 
   _useBrush(): void {
-    if(this._options.zoom.type !== ZoomType.BRUSH) {
+    if(this._options.zoom === undefined && this._options.zoom.type !== ZoomType.BRUSH) {
       return;
     }
     switch(this._options.zoom.orientation) {
@@ -254,15 +267,10 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .filter(() => !this._d3.event.shiftKey)
       .on('start', this.onBrushStart.bind(this))
       .on('end', this.onBrushEnd.bind(this))
-  
-    const shiftPan = (event) => {
-      debounce(this._onPanningZoom.bind(this, event), 10)()
-    };
 
     const pan = this._d3.zoom()
       .filter(() => this._d3.event.shiftKey)
       .on('zoom', () => {
-        // console.log('on zoom', this._d3.event);
         this._onPanningZoom(this._d3.event);
       })
       .on('end', () => {
@@ -270,8 +278,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       })
 
     this._chartContainer
-      .call(this._brush)
       .call(pan)
+      .call(this._brush)
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
@@ -362,7 +370,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this._options.labelFormat === undefined || this._options.labelFormat.xAxis === undefined) {
       return;
     }
-    let yPosition = this.height + this.margin.top + this.margin.bottom - 45;
+    let yPosition = this.height + this.margin.top + this.margin.bottom - 35;
     if(this._series.length === 0) {
       yPosition += 20;
     }
@@ -388,34 +396,37 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _onPanningZoom(event) {
-    // TODO: add scroll zoom
-    
     const transformX = this.defaultXScale.invert(event.transform.x);
     const transformY = this.defaultYScale.invert(event.transform.y);
-    console.log('_onPanningZoom', event.transform.x, transformX, this.minValueX);
-    this._state.xValueRange = [this.minValueX - transformX, this.maxValueX - transformX];
-    this._state.yValueRange = [this.minValue - transformY, this.maxValue - transformY];
-    this._chartContainer.selectAll('.metric-element')
-      .attr('transform', `translate(${event.transform.x},${event.transform.y})`);
+    const scale = event.transform.k;
+    // TODO: lock scroll zoom
+    // TODO: scroll zoom works bad if this.minValue !== 0
+    this._state.xValueRange = [(this.minValueX - transformX) / scale, (this.maxValueX - transformX) / scale];
+    this._state.yValueRange = [(this.minValue - transformY) / scale, (this.maxValue - transformY) / scale];
+    this._chartContainer.select('.metrics-rect')
+      .attr('transform', `translate(${event.transform.x},${event.transform.y}), scale(${event.transform.k})`);
     this._renderXAxis();
     this._renderYAxis();
+    this._renderGrid();
+    this._isPanning = true;
+    this.onMouseOut();
   }
 
   _onPanningEnd() {
+    this._isPanning = false;
+    this.onMouseOut();
     console.log('on panning end, but there is no callback');
   }
 
   onBrushStart(): void {
-    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.mouseOut() !== undefined) {
-      this._options.eventsCallbacks.mouseOut();
-    } else {
-      console.log('mouse out, but there is no callback');
-    }
+    // TODO: move to state
+    this._isBrushing === true;
+    this.onMouseOut();
   }
 
   onBrushEnd(): void {
     const extent = this._d3.event.selection;
-    console.log('brush end', extent);
+    this._isBrushing === false;
     if(extent === undefined || extent === null || extent.length < 2) {
       return;
     }
@@ -446,31 +457,16 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         yRange = [upperY, bottomY];
         break;
       case ZoomOrientation.BOTH:
-        if(this._options.axis.x.format === AxisFormat.NUMERIC) {
-          const xAxisStartValue = this.yScale.invert(extent[0][0]);
-          const xAxisEndValue = this.yScale.invert(extent[1][0]);
-          yRange = [xAxisStartValue, xAxisEndValue];
-          break;
-        }
         const bothStartTimestamp = this.xScale.invert(extent[0][0]);
         const bothEndTimestamp = this.xScale.invert(extent[1][0]);
         const bothUpperY = this.yScale.invert(extent[0][1]);
         const bothBottomY = this.yScale.invert(extent[1][1]);
-        if(Math.abs(bothStartTimestamp - bothEndTimestamp) < this.timeInterval) {
-          return;
-        }
         xRange = [bothStartTimestamp, bothEndTimestamp];
         yRange = [bothUpperY, bothBottomY];
     }
-    // if(xRange !== undefined && xRange.length > 0) {
-    //   this._options.zoom.x = xRange;
-    // }
-    // if(yRange !== undefined && yRange.length > 0) {
-    //   this._options.zoom.y = yRange;
-    // }
-    // this.render();
+
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomIn !== undefined) {
-      this._options.eventsCallbacks.zoomIn(xRange);
+      this._options.eventsCallbacks.zoomIn([xRange, yRange]);
     } else {
       console.log('zoom in, but there is no callback');
     }
@@ -478,11 +474,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
 
   scrollZoomed(): void {
     this._chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
-    // const newScaleDomain = this._d3.event.transform.rescaleX(this.xScale).domain();
-    // this._options.zoom.x = [newScaleDomain[0].getTime(), newScaleDomain[1].getTime()];
-    // this._renderXAxis();
-    // this._chartContainer.selectAll('.metric-path').remove();
-    // this._renderMetrics();
   }
 
   zoomOut(): void {
