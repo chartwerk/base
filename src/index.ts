@@ -57,7 +57,8 @@ const DEFAULT_OPTIONS: Options = {
   renderXaxis: true,
   renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true
+  renderCrosshair: true,
+  usePanning: true
 }
 
 abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
@@ -112,6 +113,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   abstract onMouseOver(): void;
   abstract onMouseOut(): void;
   abstract onMouseMove(): void;
+  abstract rescaleMetrics(): void;
   public abstract renderSharedCrosshair(timestamp: number): void;
   public abstract hideSharedCrosshair(): void;
 
@@ -275,15 +277,18 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       })
       .on('end', () => {
         this._onPanningEnd();
-      })
+      });
 
     this._chartContainer
-      .call(pan)
       .call(this._brush)
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
       .on('dblclick', this.zoomOut.bind(this));
+
+    if(this._options.usePanning === true) {
+      this._chartContainer.call(pan);
+    }
   }
 
   _useScrollZoom(): void {
@@ -345,7 +350,10 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
           .style('fill', this.getSerieColor(idx))
-          .text(this._series[idx].target);
+          .text(this._series[idx].target)
+          .on('click', () => {
+            this._options.eventsCallbacks.onLegendLabelClick(idx);
+          });
       }
     }
   }
@@ -437,24 +445,20 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     let yRange: [number, number];
     switch(this._options.zoom.orientation) {
       case ZoomOrientation.HORIZONTAL:
-        if(this._options.axis.x.format === AxisFormat.NUMERIC) {
-          const xAxisStartValue = this.yScale.invert(extent[0]);
-          const xAxisEndValue = this.yScale.invert(extent[1]);
-          yRange = [xAxisStartValue, xAxisEndValue]; 
-          break;
-        }
         const startTimestamp = this.xScale.invert(extent[0]);
         const endTimestamp = this.xScale.invert(extent[1]);
         if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
           return;
         }
         xRange = [startTimestamp, endTimestamp];
+        this._state.xValueRange = xRange;
         break;
       case ZoomOrientation.VERTICAL:
         const upperY = this.yScale.invert(extent[0]);
         const bottomY = this.yScale.invert(extent[1]);
         // TODO: add min zoom y
         yRange = [upperY, bottomY];
+        this._state.yValueRange = yRange;
         break;
       case ZoomOrientation.BOTH:
         const bothStartTimestamp = this.xScale.invert(extent[0][0]);
@@ -463,6 +467,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         const bothBottomY = this.yScale.invert(extent[1][1]);
         xRange = [bothStartTimestamp, bothEndTimestamp];
         yRange = [bothUpperY, bothBottomY];
+        this._state.xValueRange = xRange;
+        this._state.yValueRange = yRange;
     }
 
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomIn !== undefined) {
@@ -470,6 +476,10 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     } else {
       console.log('zoom in, but there is no callback');
     }
+    // this._renderXAxis();
+    // this._renderYAxis();
+    // this._renderGrid();
+    // this.rescaleMetrics();
   }
 
   scrollZoomed(): void {
