@@ -21,6 +21,8 @@ import max from 'lodash/max';
 import maxBy from 'lodash/maxBy';
 import add from 'lodash/add';
 import replace from 'lodash/replace';
+import reverse from 'lodash/reverse';
+import sortBy from 'lodash/sortBy';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -404,13 +406,21 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _onPanningZoom(event) {
-    const transformX = this.defaultXScale.invert(event.transform.x);
-    const transformY = this.defaultYScale.invert(event.transform.y);
+    // @ts-ignore
+    const signX = Math.sign(event.transform.x);
+    // @ts-ignore
+    let signY = Math.sign(event.transform.y);
+    if(this._options.axis.y.invert === true) {
+      signY = -signY; // don't know why it works
+    }
+    const transformX = this.absXScale.invert(Math.abs(event.transform.x));
+    const transformY = this.absYScale.invert(Math.abs(event.transform.y));
     const scale = event.transform.k;
     // TODO: lock scroll zoom
     // TODO: scroll zoom works bad if this.minValue !== 0
-    this._state.xValueRange = [(this.minValueX - transformX) / scale, (this.maxValueX - transformX) / scale];
-    this._state.yValueRange = [(this.minValue - transformY) / scale, (this.maxValue - transformY) / scale];
+    this._state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
+    this._state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+
     this._chartContainer.select('.metrics-rect')
       .attr('transform', `translate(${event.transform.x},${event.transform.y}), scale(${event.transform.k})`);
     this._renderXAxis();
@@ -498,14 +508,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     }
   }
 
-  get defaultXScale(): d3.ScaleLinear<number, number> {
+  get absXScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValueX - this.minValueX)];
     return this._d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
   }
 
-  get defaultYScale(): d3.ScaleLinear<number, number> {
+  get absYScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValue - this.minValue)];
     return this._d3.scaleLinear()
       .domain(domain)
@@ -520,11 +530,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get yScale(): d3.ScaleLinear<number, number> {
-    // inversed by default, because d3 y starts from top to bottom
-    const domain = this._state.yValueRange || [this.maxValue, this.minValue];
+    let domain = this._state.yValueRange || [this.maxValue, this.minValue];
+    domain = sortBy(domain) as [number, number];
+    if(this._options.axis.y.invert === true) {
+      domain = reverse(domain);
+    }
     return this._d3.scaleLinear()
       .domain(domain)
-      .range([0, this.height]);
+      .range([this.height, 0]); // inversed, because d3 y-axis starts from top to bottom
   }
 
   get minValue(): number {
