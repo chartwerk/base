@@ -39,14 +39,14 @@ declare abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     _renderYLabel(): void;
     _renderXLabel(): void;
     _renderNoDataPointsMessage(): void;
-    _onPanningZoom(event: any): void;
+    _onPanningZoom(event: d3.D3ZoomEvent<any, any>): void;
     _onPanningEnd(): void;
     onBrushStart(): void;
     onBrushEnd(): void;
     scrollZoomed(): void;
     zoomOut(): void;
-    get defaultXScale(): d3.ScaleLinear<number, number>;
-    get defaultYScale(): d3.ScaleLinear<number, number>;
+    get absXScale(): d3.ScaleLinear<number, number>;
+    get absYScale(): d3.ScaleLinear<number, number>;
     get xScale(): d3.ScaleLinear<number, number>;
     get yScale(): d3.ScaleLinear<number, number>;
     get minValue(): number;

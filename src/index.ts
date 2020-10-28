@@ -21,6 +21,8 @@ import max from 'lodash/max';
 import maxBy from 'lodash/maxBy';
 import add from 'lodash/add';
 import replace from 'lodash/replace';
+import reverse from 'lodash/reverse';
+import sortBy from 'lodash/sortBy';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -57,7 +59,8 @@ const DEFAULT_OPTIONS: Options = {
   renderXaxis: true,
   renderGrid: true,
   renderLegend: true,
-  renderCrosshair: true
+  renderCrosshair: true,
+  usePanning: true
 }
 
 abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
@@ -127,8 +130,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .style('height', '100%')
       .style('backface-visibility', 'hidden');
     this._chartContainer = this._svg
-        .append('g')
-          .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
+      .append('g')
+        .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
   }
 
   _renderGrid(): void {
@@ -275,15 +278,18 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       })
       .on('end', () => {
         this._onPanningEnd();
-      })
+      });
 
     this._chartContainer
-      .call(pan)
       .call(this._brush)
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
       .on('dblclick', this.zoomOut.bind(this));
+
+    if(this._options.usePanning === true) {
+      this._chartContainer.call(pan);
+    }
   }
 
   _useScrollZoom(): void {
@@ -324,7 +330,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         let node = legendRow.selectAll('text').node();
         let rowWidth = 0;
         if(node !== null) {
-          // @ts-ignore
           rowWidth = legendRow.node().getBBox().width + 25;
         }
 
@@ -345,7 +350,10 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
           .style('fill', this.getSerieColor(idx))
-          .text(this._series[idx].target);
+          .text(this._series[idx].target)
+          .on('click', () => {
+            this._options.eventsCallbacks.onLegendLabelClick(idx);
+          });
       }
     }
   }
@@ -395,14 +403,20 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .text('No data points');
   }
 
-  _onPanningZoom(event) {
-    const transformX = this.defaultXScale.invert(event.transform.x);
-    const transformY = this.defaultYScale.invert(event.transform.y);
+  _onPanningZoom(event: d3.D3ZoomEvent<any, any>) {
+    const signX = Math.sign(event.transform.x);
+    let signY = Math.sign(event.transform.y);
+    if(this._options.axis.y.invert === true) {
+      signY = -signY; // inversed, because d3 y-axis goes from top to bottom
+    }
+    const transformX = this.absXScale.invert(Math.abs(event.transform.x));
+    const transformY = this.absYScale.invert(Math.abs(event.transform.y));
     const scale = event.transform.k;
     // TODO: lock scroll zoom
     // TODO: scroll zoom works bad if this.minValue !== 0
-    this._state.xValueRange = [(this.minValueX - transformX) / scale, (this.maxValueX - transformX) / scale];
-    this._state.yValueRange = [(this.minValue - transformY) / scale, (this.maxValue - transformY) / scale];
+    this._state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
+    this._state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+
     this._chartContainer.select('.metrics-rect')
       .attr('transform', `translate(${event.transform.x},${event.transform.y}), scale(${event.transform.k})`);
     this._renderXAxis();
@@ -437,24 +451,20 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     let yRange: [number, number];
     switch(this._options.zoom.orientation) {
       case ZoomOrientation.HORIZONTAL:
-        if(this._options.axis.x.format === AxisFormat.NUMERIC) {
-          const xAxisStartValue = this.yScale.invert(extent[0]);
-          const xAxisEndValue = this.yScale.invert(extent[1]);
-          yRange = [xAxisStartValue, xAxisEndValue]; 
-          break;
-        }
         const startTimestamp = this.xScale.invert(extent[0]);
         const endTimestamp = this.xScale.invert(extent[1]);
         if(Math.abs(endTimestamp - startTimestamp) < this.timeInterval) {
           return;
         }
         xRange = [startTimestamp, endTimestamp];
+        this._state.xValueRange = xRange;
         break;
       case ZoomOrientation.VERTICAL:
         const upperY = this.yScale.invert(extent[0]);
         const bottomY = this.yScale.invert(extent[1]);
         // TODO: add min zoom y
         yRange = [upperY, bottomY];
+        this._state.yValueRange = yRange;
         break;
       case ZoomOrientation.BOTH:
         const bothStartTimestamp = this.xScale.invert(extent[0][0]);
@@ -463,6 +473,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         const bothBottomY = this.yScale.invert(extent[1][1]);
         xRange = [bothStartTimestamp, bothEndTimestamp];
         yRange = [bothUpperY, bothBottomY];
+        this._state.xValueRange = xRange;
+        this._state.yValueRange = yRange;
     }
 
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomIn !== undefined) {
@@ -488,14 +500,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     }
   }
 
-  get defaultXScale(): d3.ScaleLinear<number, number> {
+  get absXScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValueX - this.minValueX)];
     return this._d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
   }
 
-  get defaultYScale(): d3.ScaleLinear<number, number> {
+  get absYScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValue - this.minValue)];
     return this._d3.scaleLinear()
       .domain(domain)
@@ -510,11 +522,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get yScale(): d3.ScaleLinear<number, number> {
-    // inversed by default, because d3 y starts from top to bottom
-    const domain = this._state.yValueRange || [this.maxValue, this.minValue];
+    let domain = this._state.yValueRange || [this.maxValue, this.minValue];
+    domain = sortBy(domain) as [number, number];
+    if(this._options.axis.y.invert === true) {
+      domain = reverse(domain);
+    }
     return this._d3.scaleLinear()
       .domain(domain)
-      .range([0, this.height]);
+      .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
   }
 
   get minValue(): number {
