@@ -20,6 +20,7 @@ export declare type Options = {
         mouseMove: (evt: any) => void;
         mouseOut: () => void;
         onLegendClick: (idx: number) => void;
+        onLegendLabelClick: (idx: number) => void;
     };
     axis?: {
         x?: {
@@ -70,6 +71,7 @@ export declare type Options = {
     renderGrid?: boolean;
     renderLegend?: boolean;
     renderCrosshair?: boolean;
+    usePanning?: boolean;
 };
 export declare type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export declare enum TickOrientation {
