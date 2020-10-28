@@ -115,7 +115,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   abstract onMouseOver(): void;
   abstract onMouseOut(): void;
   abstract onMouseMove(): void;
-  abstract rescaleMetrics(): void;
   public abstract renderSharedCrosshair(timestamp: number): void;
   public abstract hideSharedCrosshair(): void;
 
@@ -131,8 +130,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .style('height', '100%')
       .style('backface-visibility', 'hidden');
     this._chartContainer = this._svg
-        .append('g')
-          .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
+      .append('g')
+        .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
   }
 
   _renderGrid(): void {
@@ -331,7 +330,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         let node = legendRow.selectAll('text').node();
         let rowWidth = 0;
         if(node !== null) {
-          // @ts-ignore
           rowWidth = legendRow.node().getBBox().width + 25;
         }
 
@@ -405,10 +403,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .text('No data points');
   }
 
-  _onPanningZoom(event) {
-    // @ts-ignore
+  _onPanningZoom(event: d3.D3ZoomEvent<any, any>) {
     const signX = Math.sign(event.transform.x);
-    // @ts-ignore
     let signY = Math.sign(event.transform.y);
     if(this._options.axis.y.invert === true) {
       signY = -signY; // don't know why it works
@@ -486,10 +482,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     } else {
       console.log('zoom in, but there is no callback');
     }
-    // this._renderXAxis();
-    // this._renderYAxis();
-    // this._renderGrid();
-    // this.rescaleMetrics();
   }
 
   scrollZoomed(): void {
