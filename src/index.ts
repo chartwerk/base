@@ -407,7 +407,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     const signX = Math.sign(event.transform.x);
     let signY = Math.sign(event.transform.y);
     if(this._options.axis.y.invert === true) {
-      signY = -signY; // don't know why it works
+      signY = -signY; // inversed, because d3 y-axis goes from top to bottom
     }
     const transformX = this.absXScale.invert(Math.abs(event.transform.x));
     const transformY = this.absYScale.invert(Math.abs(event.transform.y));
@@ -529,7 +529,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     }
     return this._d3.scaleLinear()
       .domain(domain)
-      .range([this.height, 0]); // inversed, because d3 y-axis starts from top to bottom
+      .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
   }
 
   get minValue(): number {
