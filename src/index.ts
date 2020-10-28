@@ -404,7 +404,9 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _onPanningZoom(event: d3.D3ZoomEvent<any, any>) {
+    // @ts-ignore
     const signX = Math.sign(event.transform.x);
+    // @ts-ignore
     let signY = Math.sign(event.transform.y);
     if(this._options.axis.y.invert === true) {
       signY = -signY; // inversed, because d3 y-axis goes from top to bottom
