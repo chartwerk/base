@@ -1,5 +1,5 @@
 import { Options } from './types';
-export declare class BaseState {
+export declare class PodState {
     private _xValueRange;
     private _yValueRange;
     private _transform;

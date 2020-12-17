@@ -97,7 +97,8 @@ export declare enum ZoomOrientation {
 }
 export declare enum ZoomType {
     BRUSH = "brush",
-    SCROLL = "scroll"
+    SCROLL = "scroll",
+    NONE = "none"
 }
 export declare enum AxisFormat {
     TIME = "time",
