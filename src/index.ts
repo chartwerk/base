@@ -246,7 +246,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   _useBrush(): void {
-    if(this._options.zoom === undefined && this._options.zoom.type !== ZoomType.BRUSH) {
+    if(this._options.zoom === undefined || this._options.zoom.type !== ZoomType.BRUSH) {
       return;
     }
     switch(this._options.zoom.orientation) {

@@ -93,7 +93,8 @@ export enum ZoomOrientation {
 }
 export enum ZoomType {
   BRUSH = 'brush',
-  SCROLL = 'scroll'
+  SCROLL = 'scroll',
+  NONE = 'none'
 }
 export enum AxisFormat {
   TIME = 'time',
