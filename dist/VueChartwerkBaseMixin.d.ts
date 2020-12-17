@@ -30,6 +30,8 @@ declare const _default: {
         mouseMove(evt: any): void;
         mouseOut(): void;
         onLegendClick(idx: any): void;
+        panningEnd(range: any): void;
+        contextMenu(evt: any): void;
     };
 };
 export default _default;
