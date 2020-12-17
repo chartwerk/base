@@ -37,7 +37,7 @@ const DEFAULT_TRANSFORM = {
   k: 1
 }
 
-export class BaseState {
+export class PodState {
   private _xValueRange: [number, number] | undefined = undefined;
   private _yValueRange: [number, number] | undefined = undefined;
   private _transform: { x: number, y: number, k: number } = DEFAULT_TRANSFORM;
