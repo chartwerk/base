@@ -11,12 +11,14 @@ export type Options = {
   margin?: Margin;
   confidence?: number;
   eventsCallbacks?: {
-    zoomIn: (range:[[number, number] | undefined, [number, number] | undefined]) => void,
+    zoomIn: (range: [AxisRange, AxisRange]) => void,
+    panningEnd: ( range: [AxisRange, AxisRange]) => void,
     zoomOut: (center: number) => void,
     mouseMove: (evt: any) => void,
     mouseOut: () => void,
     onLegendClick: (idx: number) => void,
-    onLegendLabelClick: (idx: number) => void
+    onLegendLabelClick: (idx: number) => void,
+    contextMenu: (evt: any) => void, // the same name as in d3.events
   };
   axis?: {
     x?: {
@@ -69,6 +71,7 @@ export type Options = {
   renderCrosshair?: boolean;
   usePanning?: boolean;
 };
+export type AxisRange = [number, number] | undefined;
 export type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export enum TickOrientation {
   VERTICAL = 'vertical',

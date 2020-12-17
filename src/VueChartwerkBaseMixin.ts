@@ -57,6 +57,12 @@ export default {
       if(has(this.$listeners, 'onLegendClick')) {
         this.options.eventsCallbacks.onLegendClick = this.onLegendClick.bind(this);
       }
+      if(has(this.$listeners, 'panningEnd')) {
+        this.options.eventsCallbacks.panningEnd = this.panningEnd.bind(this);
+      }
+      if(has(this.$listeners, 'contextMenu')) {
+        this.options.eventsCallbacks.contextMenu = this.contextMenu.bind(this);
+      }
     },
     zoomIn(range) {
       this.$emit('zoomIn', range);
@@ -72,6 +78,12 @@ export default {
     },
     onLegendClick(idx) {
       this.$emit('onLegendClick', idx);
+    },
+    panningEnd(range) {
+      this.$emit('panningEnd', range);
+    },
+    contextMenu(evt) {
+      this.$emit('contextMenu', evt);
     }
   }
 };

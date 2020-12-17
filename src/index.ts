@@ -414,13 +414,29 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     const transformX = this.absXScale.invert(Math.abs(event.transform.x));
     const transformY = this.absYScale.invert(Math.abs(event.transform.y));
     const scale = event.transform.k;
-    // TODO: lock scroll zoom
+    // TODO: lock scroll zoom or try zoom.identity
     // TODO: scroll zoom works bad if this.minValue !== 0
-    this._state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
-    this._state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+    // Here we use Zoom option, to determine witch axis will be panned. Options should be refactored
+    let translateX = 0;
+    let translateY = 0;
+    switch (this._options.zoom.orientation) {
+      case ZoomOrientation.HORIZONTAL:
+        this._state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
+        translateX = event.transform.x;
+        break;
+      case ZoomOrientation.VERTICAL:
+        this._state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+        translateY = event.transform.y;
+        break;
+      case ZoomOrientation.BOTH:
+        translateX = event.transform.x;
+        translateY = event.transform.y;
+        this._state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
+        this._state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+    }
 
     this._chartContainer.select('.metrics-rect')
-      .attr('transform', `translate(${event.transform.x},${event.transform.y}), scale(${event.transform.k})`);
+      .attr('transform', `translate(${translateX},${translateY}), scale(${event.transform.k})`);
     this._renderXAxis();
     this._renderYAxis();
     this._renderGrid();
@@ -428,10 +444,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     this.onMouseOut();
   }
 
-  _onPanningEnd() {
+  _onPanningEnd(): void {
     this._isPanning = false;
     this.onMouseOut();
-    console.log('on panning end, but there is no callback');
+    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.panningEnd !== undefined) {
+      this._options.eventsCallbacks.panningEnd([this._state.xValueRange, this._state.yValueRange]);
+    } else {
+      console.log('on panning end, but there is no callback');
+    }
   }
 
   onBrushStart(): void {
