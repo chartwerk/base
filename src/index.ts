@@ -235,14 +235,6 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         .attr('x2', this.width)
         .style('pointer-events', 'none');
     }
-
-    this._crosshair.append('circle')
-      .attr('class', `crosshair-circle crosshair-background`)
-      .attr('r', 9)
-      .attr('clip-path', `url(#${this.rectClipId})`)
-      .style('opacity', 0.3)
-      .style('display', 'none')
-      .style('pointer-events', 'none');
   }
 
   _useBrush(): void {
