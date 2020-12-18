@@ -445,13 +445,13 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
-  onBrushStart(): void {
+  protected onBrushStart(): void {
     // TODO: move to state
     this.isBrushing === true;
     this.onMouseOut();
   }
 
-  onBrushEnd(): void {
+  protected onBrushEnd(): void {
     const extent = this._d3.event.selection;
     this.isBrushing === false;
     if(extent === undefined || extent === null || extent.length < 2) {
@@ -497,11 +497,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
   }
 
-  scrollZoomed(): void {
+  protected scrollZoomed(): void {
     this.chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
   }
 
-  zoomOut(): void {
+  protected zoomOut(): void {
     if(this.isOutOfChart() === true) {
       return;
     }

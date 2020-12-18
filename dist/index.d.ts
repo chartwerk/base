@@ -41,10 +41,10 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected renderNoDataPointsMessage(): void;
     protected onPanningZoom(event: d3.D3ZoomEvent<any, any>): void;
     protected onPanningEnd(): void;
-    onBrushStart(): void;
-    onBrushEnd(): void;
-    scrollZoomed(): void;
-    zoomOut(): void;
+    protected onBrushStart(): void;
+    protected onBrushEnd(): void;
+    protected scrollZoomed(): void;
+    protected zoomOut(): void;
     get absXScale(): d3.ScaleLinear<number, number>;
     get absYScale(): d3.ScaleLinear<number, number>;
     get xScale(): d3.ScaleLinear<number, number>;
