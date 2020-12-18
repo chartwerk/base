@@ -1,6 +1,6 @@
-# Chartwerk Base
+# Chartwerk Pod
 
-Plugin with an abstract class providing basics for timeseries visualization.
+Plugin with an abstract class providing basics for visualization.
 
 ## Plugin renders:
 - SVG container with:

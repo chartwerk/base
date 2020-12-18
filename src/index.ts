@@ -1,5 +1,5 @@
-import VueChartwerkBaseMixin from './VueChartwerkBaseMixin';
-import { BaseState } from './state';
+import VueChartwerkPodMixin from './VueChartwerkPodMixin';
+import { PodState } from './state';
 
 import styles from './css/style.css';
 
@@ -63,17 +63,17 @@ const DEFAULT_OPTIONS: Options = {
   usePanning: true
 }
 
-abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
-  protected _d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
-  protected _chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
-  protected _crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
-  protected _brush?: d3.BrushBehavior<unknown>;
-  protected _zoom?: any;
-  protected _svg?: d3.Selection<SVGElement, unknown, null, undefined>; 
-  protected _state?: BaseState;
-  protected _clipPath?: any;
-  protected _isPanning = false;
-  protected _isBrushing = false;
+abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
+  protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
+  protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
+  protected brush?: d3.BrushBehavior<unknown>;
+  protected zoom?: any;
+  protected svg?: d3.Selection<SVGElement, unknown, null, undefined>; 
+  protected state?: PodState;
+  protected clipPath?: any;
+  protected isPanning = false;
+  protected isBrushing = false;
   private clipPathUID = '';
 
   constructor(
@@ -89,58 +89,58 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     // TODO: update defaults(we have defaults for option: { foo: ..., bar: ... }, user pass option: { foo: ... }, so bar has no defaults)
     defaults(this._options, DEFAULT_OPTIONS);
     // TODO: mb move it to render();
-    this._initBaseState();
-    this._d3Node = this._d3.select(el);
+    this.initPodState();
+    this.d3Node = this._d3.select(el);
   }
 
   public render(): void {
-    this._renderSvg();
-    this._renderXAxis();
-    this._renderYAxis();
-    this._renderGrid();
+    this.renderSvg();
+    this.renderXAxis();
+    this.renderYAxis();
+    this.renderGrid();
 
-    this._renderClipPath();
-    this._useBrush();
-    this._useScrollZoom();
+    this.renderClipPath();
+    this.useBrush();
+    this.useScrollZoom();
 
-    this._renderCrosshair();
-    this._renderMetrics();
+    this.renderCrosshair();
+    this.renderMetrics();
 
-    this._renderLegend();
-    this._renderYLabel();
-    this._renderXLabel();
+    this.renderLegend();
+    this.renderYLabel();
+    this.renderXLabel();
   }
 
-  abstract _renderMetrics(): void;
-  abstract onMouseOver(): void;
-  abstract onMouseOut(): void;
-  abstract onMouseMove(): void;
+  protected abstract renderMetrics(): void;
+  protected abstract onMouseOver(): void;
+  protected abstract onMouseOut(): void;
+  protected abstract onMouseMove(): void;
   public abstract renderSharedCrosshair(timestamp: number): void;
   public abstract hideSharedCrosshair(): void;
 
-  _initBaseState() {
-    this._state = new BaseState(this._options);
+  protected initPodState() {
+    this.state = new PodState(this._options);
   }
 
-  _renderSvg(): void {
-    this._d3Node.select('svg').remove();
-    this._svg = this._d3Node
+  protected renderSvg(): void {
+    this.d3Node.select('svg').remove();
+    this.svg = this.d3Node
       .append('svg')
       .style('width', '100%')
       .style('height', '100%')
       .style('backface-visibility', 'hidden');
-    this._chartContainer = this._svg
+    this.chartContainer = this.svg
       .append('g')
         .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
   }
 
-  _renderGrid(): void {
+  protected renderGrid(): void {
     if(this._options.renderGrid === false) {
       return;
     }
-    this._chartContainer.selectAll('.grid').remove();
+    this.chartContainer.selectAll('.grid').remove();
 
-    this._chartContainer
+    this.chartContainer
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
       .attr('class', 'grid')
@@ -150,7 +150,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           .tickFormat(() => '')
       );
 
-    this._chartContainer
+    this.chartContainer
       .append('g')
       .attr('class', 'grid')
       .call(
@@ -159,19 +159,19 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           .tickFormat(() => '')
       );
 
-    this._chartContainer.selectAll('.grid').selectAll('.tick')
+    this.chartContainer.selectAll('.grid').selectAll('.tick')
       .attr('opacity', '0.5');
 
-    this._chartContainer.selectAll('.grid').select('.domain')
+    this.chartContainer.selectAll('.grid').select('.domain')
       .style('pointer-events', 'none');
   }
 
-  _renderXAxis(): void {
+  protected renderXAxis(): void {
     if(this._options.renderXaxis === false) {
       return;
     }
-    this._chartContainer.select('#x-axis-container').remove();
-    this._chartContainer
+    this.chartContainer.select('#x-axis-container').remove();
+    this.chartContainer
       .append('g')
       .attr('transform', `translate(0,${this.height})`)
       .attr('id', 'x-axis-container')
@@ -180,16 +180,16 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           .tickSize(2)
           .tickFormat(this.xAxisTicksFormat)
       );
-    this._chartContainer.select('#x-axis-container').selectAll('.tick').selectAll('text')
+    this.chartContainer.select('#x-axis-container').selectAll('.tick').selectAll('text')
       .style('transform', this.xTickTransform);
   }
 
-  _renderYAxis(): void {
+  protected renderYAxis(): void {
     if(this._options.renderYaxis === false) {
       return;
     }
-    this._chartContainer.select('#y-axis-container').remove();
-    this._chartContainer
+    this.chartContainer.select('#y-axis-container').remove();
+    this.chartContainer
       .append('g')
       .attr('id', 'y-axis-container')
       // TODO: number of ticks shouldn't be hardcoded
@@ -199,11 +199,11 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       );
   }
 
-  _renderCrosshair(): void {
+  protected renderCrosshair(): void {
     if(this._options.renderYaxis === false) {
       return;
     }
-    this._crosshair = this._chartContainer.append('g')
+    this.crosshair = this.chartContainer.append('g')
       .attr('id', 'crosshair-container')
       .style('display', 'none');
 
@@ -211,7 +211,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       this._options.crosshair.orientation === CrosshairOrientation.VERTICAL ||
       this._options.crosshair.orientation === CrosshairOrientation.BOTH
     ) {
-      this._crosshair.append('line')
+      this.crosshair.append('line')
         .attr('class', 'crosshair-line')
         .attr('id', 'crosshair-line-x')
         .attr('fill', this._options.crosshair.color)
@@ -225,7 +225,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       this._options.crosshair.orientation === CrosshairOrientation.HORIZONTAL ||
       this._options.crosshair.orientation === CrosshairOrientation.BOTH
     ) {
-      this._crosshair.append('line')
+      this.crosshair.append('line')
         .attr('class', 'crosshair-line')
         .attr('id', 'crosshair-line-y')
         .attr('fill', this._options.crosshair.color)
@@ -235,34 +235,26 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         .attr('x2', this.width)
         .style('pointer-events', 'none');
     }
-
-    this._crosshair.append('circle')
-      .attr('class', `crosshair-circle crosshair-background`)
-      .attr('r', 9)
-      .attr('clip-path', `url(#${this.rectClipId})`)
-      .style('opacity', 0.3)
-      .style('display', 'none')
-      .style('pointer-events', 'none');
   }
 
-  _useBrush(): void {
-    if(this._options.zoom === undefined && this._options.zoom.type !== ZoomType.BRUSH) {
+  protected useBrush(): void {
+    if(this._options.zoom === undefined || this._options.zoom.type !== ZoomType.BRUSH) {
       return;
     }
     switch(this._options.zoom.orientation) {
       case ZoomOrientation.VERTICAL:
-        this._brush = this._d3.brushY();
+        this.brush = this._d3.brushY();
         break;
       case ZoomOrientation.HORIZONTAL:
-        this._brush = this._d3.brushX();
+        this.brush = this._d3.brushX();
         break;
       case ZoomOrientation.BOTH:
-        this._brush = this._d3.brush();
+        this.brush = this._d3.brush();
         break;
       default:
-        this._brush = this._d3.brushX();
+        this.brush = this._d3.brushX();
     }
-    this._brush.extent([
+    this.brush.extent([
         [0, 0],
         [this.width, this.height]
       ])
@@ -274,39 +266,38 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     const pan = this._d3.zoom()
       .filter(() => this._d3.event.shiftKey)
       .on('zoom', () => {
-        this._onPanningZoom(this._d3.event);
+        this.onPanningZoom(this._d3.event);
       })
       .on('end', () => {
-        this._onPanningEnd();
+        this.onPanningEnd();
       });
 
-    this._chartContainer
-      .call(this._brush)
+    this.chartContainer
+      .call(this.brush)
       .on('mouseover', this.onMouseOver.bind(this))
       .on('mouseout', this.onMouseOut.bind(this))
       .on('mousemove', this.onMouseMove.bind(this))
       .on('dblclick', this.zoomOut.bind(this));
 
     if(this._options.usePanning === true) {
-      this._chartContainer.call(pan);
+      this.chartContainer.call(pan);
     }
   }
 
-  _useScrollZoom(): void {
+  protected useScrollZoom(): void {
     if(this._options.zoom.type !== ZoomType.SCROLL) {
       return;
     }
-    this._zoom = this._d3.zoom();
-    this._zoom
+    this.zoom = this._d3.zoom();
+    this.zoom
       .scaleExtent([0.5, Infinity])
       .on('zoom', this.scrollZoomed.bind(this));
 
-    this._svg
-      .call(this._zoom);
+    this.svg.call(this.zoom);
   }
 
-  _renderClipPath(): void {
-    this._clipPath = this._chartContainer.append('defs').append('SVG:clipPath')
+  protected renderClipPath(): void {
+    this.clipPath = this.chartContainer.append('defs').append('SVG:clipPath')
       .attr('id', this.rectClipId)
       .append('SVG:rect')
       .attr('width', this.width)
@@ -315,12 +306,12 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .attr('y', 0);
   }
 
-  _renderLegend(): void {
+  protected renderLegend(): void {
     if(this._options.renderLegend === false) {
       return;
     }
     if(this._series.length > 0) {
-      let legendRow = this._chartContainer
+      let legendRow = this.chartContainer
         .append('g')
         .attr('class', 'legend-row');
       for(let idx = 0; idx < this._series.length; idx++) {
@@ -358,11 +349,11 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     }
   }
 
-  _renderYLabel(): void {
+  protected renderYLabel(): void {
     if(this._options.labelFormat === undefined || this._options.labelFormat.yAxis === undefined) {
       return;
     }
-    this._chartContainer.append('text')
+    this.chartContainer.append('text')
       .attr('y', 0 - this.margin.left)
       .attr('x', 0 - (this.height / 2))
       .attr('dy', '1em')
@@ -374,7 +365,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .text(this._options.labelFormat.yAxis);
   }
 
-  _renderXLabel(): void {
+  protected renderXLabel(): void {
     if(this._options.labelFormat === undefined || this._options.labelFormat.xAxis === undefined) {
       return;
     }
@@ -382,7 +373,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     if(this._series.length === 0) {
       yPosition += 20;
     }
-    this._chartContainer.append('text')
+    this.chartContainer.append('text')
       .attr('class', 'x-axis-label')
       .attr('x', this.width / 2)
       .attr('y', yPosition)
@@ -392,8 +383,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .text(this._options.labelFormat.xAxis);
   }
 
-  _renderNoDataPointsMessage(): void {
-    this._chartContainer.append('text')
+  protected renderNoDataPointsMessage(): void {
+    this.chartContainer.append('text')
       .attr('class', 'alert-text')
       .attr('x', this.width / 2)
       .attr('y', this.height / 2)
@@ -403,7 +394,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
       .text('No data points');
   }
 
-  _onPanningZoom(event: d3.D3ZoomEvent<any, any>) {
+  protected onPanningZoom(event: d3.D3ZoomEvent<any, any>) {
     // @ts-ignore
     const signX = Math.sign(event.transform.x);
     // @ts-ignore
@@ -414,40 +405,60 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     const transformX = this.absXScale.invert(Math.abs(event.transform.x));
     const transformY = this.absYScale.invert(Math.abs(event.transform.y));
     const scale = event.transform.k;
-    // TODO: lock scroll zoom
+    // TODO: lock scroll zoom or try zoom.identity
     // TODO: scroll zoom works bad if this.minValue !== 0
-    this._state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
-    this._state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+    // Here we use Zoom option, to determine witch axis will be panned. Options should be refactored
+    let translateX = 0;
+    let translateY = 0;
+    switch (this._options.zoom.orientation) {
+      case ZoomOrientation.HORIZONTAL:
+        this.state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
+        translateX = event.transform.x;
+        break;
+      case ZoomOrientation.VERTICAL:
+        this.state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+        translateY = event.transform.y;
+        break;
+      case ZoomOrientation.BOTH:
+        translateX = event.transform.x;
+        translateY = event.transform.y;
+        this.state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
+        this.state.yValueRange = [(this.minValue + signY * transformY) / scale, (this.maxValue + signY * transformY) / scale];
+    }
 
-    this._chartContainer.select('.metrics-rect')
-      .attr('transform', `translate(${event.transform.x},${event.transform.y}), scale(${event.transform.k})`);
-    this._renderXAxis();
-    this._renderYAxis();
-    this._renderGrid();
-    this._isPanning = true;
+    this.chartContainer.select('.metrics-rect')
+      .attr('transform', `translate(${translateX},${translateY}), scale(${event.transform.k})`);
+    this.renderXAxis();
+    this.renderYAxis();
+    this.renderGrid();
+    this.isPanning = true;
     this.onMouseOut();
   }
 
-  _onPanningEnd() {
-    this._isPanning = false;
+  protected onPanningEnd(): void {
+    this.isPanning = false;
     this.onMouseOut();
-    console.log('on panning end, but there is no callback');
+    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.panningEnd !== undefined) {
+      this._options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange]);
+    } else {
+      console.log('on panning end, but there is no callback');
+    }
   }
 
-  onBrushStart(): void {
+  protected onBrushStart(): void {
     // TODO: move to state
-    this._isBrushing === true;
+    this.isBrushing === true;
     this.onMouseOut();
   }
 
-  onBrushEnd(): void {
+  protected onBrushEnd(): void {
     const extent = this._d3.event.selection;
-    this._isBrushing === false;
+    this.isBrushing === false;
     if(extent === undefined || extent === null || extent.length < 2) {
       return;
     }
-    this._chartContainer
-      .call(this._brush.move, null);
+    this.chartContainer
+      .call(this.brush.move, null);
 
     let xRange: [number, number];
     let yRange: [number, number];
@@ -459,14 +470,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
           return;
         }
         xRange = [startTimestamp, endTimestamp];
-        this._state.xValueRange = xRange;
+        this.state.xValueRange = xRange;
         break;
       case ZoomOrientation.VERTICAL:
         const upperY = this.yScale.invert(extent[0]);
         const bottomY = this.yScale.invert(extent[1]);
         // TODO: add min zoom y
         yRange = [upperY, bottomY];
-        this._state.yValueRange = yRange;
+        this.state.yValueRange = yRange;
         break;
       case ZoomOrientation.BOTH:
         const bothStartTimestamp = this.xScale.invert(extent[0][0]);
@@ -475,8 +486,8 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
         const bothBottomY = this.yScale.invert(extent[1][1]);
         xRange = [bothStartTimestamp, bothEndTimestamp];
         yRange = [bothUpperY, bothBottomY];
-        this._state.xValueRange = xRange;
-        this._state.yValueRange = yRange;
+        this.state.xValueRange = xRange;
+        this.state.yValueRange = yRange;
     }
 
     if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomIn !== undefined) {
@@ -486,11 +497,11 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
     }
   }
 
-  scrollZoomed(): void {
-    this._chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
+  protected scrollZoomed(): void {
+    this.chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
   }
 
-  zoomOut(): void {
+  protected zoomOut(): void {
     if(this.isOutOfChart() === true) {
       return;
     }
@@ -517,14 +528,14 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get xScale(): d3.ScaleLinear<number, number> {
-    const domain = this._state.xValueRange || [this.minValueX, this.maxValueX];
+    const domain = this.state.xValueRange || [this.minValueX, this.maxValueX];
     return this._d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
   }
 
   get yScale(): d3.ScaleLinear<number, number> {
-    let domain = this._state.yValueRange || [this.maxValue, this.minValue];
+    let domain = this.state.yValueRange || [this.maxValue, this.minValue];
     domain = sortBy(domain) as [number, number];
     if(this._options.axis.y.invert === true) {
       domain = reverse(domain);
@@ -737,11 +748,11 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   get width(): number {
-    return this._d3Node.node().clientWidth - this.margin.left - this.margin.right;
+    return this.d3Node.node().clientWidth - this.margin.left - this.margin.right;
   }
 
   get height(): number {
-    return this._d3Node.node().clientHeight - this.margin.top - this.margin.bottom;
+    return this.d3Node.node().clientHeight - this.margin.top - this.margin.bottom;
   }
 
   get legendRowPositionY(): number {
@@ -806,7 +817,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
   }
 
   isOutOfChart(): boolean {
-    const event = this._d3.mouse(this._chartContainer.node());
+    const event = this._d3.mouse(this.chartContainer.node());
     const eventX = event[0];
     const eventY = event[1];
     if(
@@ -820,7 +831,7 @@ abstract class ChartwerkBase<T extends TimeSerie, O extends Options> {
 }
 
 export {
-  ChartwerkBase, VueChartwerkBaseMixin,
+  ChartwerkPod, VueChartwerkPodMixin,
   Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat,
   palette
 };

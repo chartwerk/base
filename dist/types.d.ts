@@ -15,12 +15,14 @@ export declare type Options = {
     margin?: Margin;
     confidence?: number;
     eventsCallbacks?: {
-        zoomIn: (range: [[number, number] | undefined, [number, number] | undefined]) => void;
+        zoomIn: (range: [AxisRange, AxisRange]) => void;
+        panningEnd: (range: [AxisRange, AxisRange]) => void;
         zoomOut: (center: number) => void;
         mouseMove: (evt: any) => void;
         mouseOut: () => void;
         onLegendClick: (idx: number) => void;
         onLegendLabelClick: (idx: number) => void;
+        contextMenu: (evt: any) => void;
     };
     axis?: {
         x?: {
@@ -73,6 +75,7 @@ export declare type Options = {
     renderCrosshair?: boolean;
     usePanning?: boolean;
 };
+export declare type AxisRange = [number, number] | undefined;
 export declare type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export declare enum TickOrientation {
     VERTICAL = "vertical",
@@ -94,7 +97,8 @@ export declare enum ZoomOrientation {
 }
 export declare enum ZoomType {
     BRUSH = "brush",
-    SCROLL = "scroll"
+    SCROLL = "scroll",
+    NONE = "none"
 }
 export declare enum AxisFormat {
     TIME = "time",

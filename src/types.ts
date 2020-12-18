@@ -1,4 +1,5 @@
 export type Margin = { top: number, right: number, bottom: number, left: number };
+// TODO: Pods can render not only "time" series
 export type TimeSerie = {
   target: string,
   datapoints: [number, number][],
@@ -11,12 +12,14 @@ export type Options = {
   margin?: Margin;
   confidence?: number;
   eventsCallbacks?: {
-    zoomIn: (range:[[number, number] | undefined, [number, number] | undefined]) => void,
+    zoomIn: (range: [AxisRange, AxisRange]) => void,
+    panningEnd: ( range: [AxisRange, AxisRange]) => void,
     zoomOut: (center: number) => void,
     mouseMove: (evt: any) => void,
     mouseOut: () => void,
     onLegendClick: (idx: number) => void,
-    onLegendLabelClick: (idx: number) => void
+    onLegendLabelClick: (idx: number) => void,
+    contextMenu: (evt: any) => void, // the same name as in d3.events
   };
   axis?: {
     x?: {
@@ -69,6 +72,7 @@ export type Options = {
   renderCrosshair?: boolean;
   usePanning?: boolean;
 };
+export type AxisRange = [number, number] | undefined;
 export type VueOptions = Omit<Options, 'eventsCallbacks'>;
 export enum TickOrientation {
   VERTICAL = 'vertical',
@@ -90,7 +94,8 @@ export enum ZoomOrientation {
 }
 export enum ZoomType {
   BRUSH = 'brush',
-  SCROLL = 'scroll'
+  SCROLL = 'scroll',
+  NONE = 'none'
 }
 export enum AxisFormat {
   TIME = 'time',
