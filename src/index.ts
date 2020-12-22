@@ -95,7 +95,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     // TODO: mb move it to render();
     this.initPodState();
-    this.d3Node = this._d3.select(this._el);
+    this.d3Node = this.d3.select(this.el);
   }
 
   public render(): void {
