@@ -76,13 +76,14 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected isPanning = false;
   protected isBrushing = false;
   private _clipPathUID = '';
-  private readonly _options: O;
+  protected readonly options: O;
+  protected readonly d3: typeof d3;
 
   constructor(
     // maybe it's not the best idea
-    private readonly _d3: typeof d3,
-    private readonly _el: HTMLElement,
-    private readonly _series: T[] = [],
+    _d3: typeof d3,
+    protected readonly el: HTMLElement,
+    protected readonly series: T[] = [],
     _options: O
   ) {
     // TODO: test if it's necessary
@@ -91,7 +92,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     let options = cloneDeep(_options);
     // TODO: update defaults(we have defaults for option: { foo: ..., bar: ... }, user pass option: { foo: ... }, so bar has no defaults)
     defaults(options, DEFAULT_OPTIONS);
-    this._options = options;
+    this.options = options;
+    this.d3 = _d3;
 
     // TODO: mb move it to render();
     this.initPodState();
@@ -124,23 +126,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   public abstract hideSharedCrosshair(): void;
 
   protected initPodState() {
-    this.state = new PodState(this._options);
-  }
-
-  protected get series(): T[] {
-    return this._series;
-  }
-
-  protected get options(): O {
-    return this._options;
-  }
-
-  protected get d3(): typeof d3 {
-    return this._d3;
-  }
-
-  protected get el(): HTMLElement {
-    return this._el;
+    this.state = new PodState(this.options);
   }
 
   protected renderSvg(): void {
@@ -175,7 +161,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('class', 'grid')
       .call(
-        this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this.d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
           .tickSize(-this.width)
           .tickFormat(() => '')
       );
@@ -215,7 +201,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .attr('id', 'y-axis-container')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
-        this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this.d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
           .tickSize(2)
       );
   }
@@ -264,30 +250,30 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     }
     switch(this.options.zoom.orientation) {
       case ZoomOrientation.VERTICAL:
-        this.brush = this._d3.brushY();
+        this.brush = this.d3.brushY();
         break;
       case ZoomOrientation.HORIZONTAL:
-        this.brush = this._d3.brushX();
+        this.brush = this.d3.brushX();
         break;
       case ZoomOrientation.BOTH:
-        this.brush = this._d3.brush();
+        this.brush = this.d3.brush();
         break;
       default:
-        this.brush = this._d3.brushX();
+        this.brush = this.d3.brushX();
     }
     this.brush.extent([
         [0, 0],
         [this.width, this.height]
       ])
       .handleSize(20)
-      .filter(() => !this._d3.event.shiftKey)
+      .filter(() => !this.d3.event.shiftKey)
       .on('start', this.onBrushStart.bind(this))
       .on('end', this.onBrushEnd.bind(this))
 
-    const pan = this._d3.zoom()
-      .filter(() => this._d3.event.shiftKey)
+    const pan = this.d3.zoom()
+      .filter(() => this.d3.event.shiftKey)
       .on('zoom', () => {
-        this.onPanningZoom(this._d3.event);
+        this.onPanningZoom(this.d3.event);
       })
       .on('end', () => {
         this.onPanningEnd();
@@ -309,7 +295,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.options.zoom.type !== ZoomType.SCROLL) {
       return;
     }
-    this.zoom = this._d3.zoom();
+    this.zoom = this.d3.zoom();
     this.zoom
       .scaleExtent([0.5, Infinity])
       .on('zoom', this.scrollZoomed.bind(this));
@@ -473,7 +459,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected onBrushEnd(): void {
-    const extent = this._d3.event.selection;
+    const extent = this.d3.event.selection;
     this.isBrushing === false;
     if(extent === undefined || extent === null || extent.length < 2) {
       return;
@@ -519,7 +505,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected scrollZoomed(): void {
-    this.chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
+    this.chartContainer.selectAll('.scorecard').attr('transform', this.d3.event.transform);
   }
 
   protected zoomOut(): void {
@@ -536,21 +522,21 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   get absXScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValueX - this.minValueX)];
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
   }
 
   get absYScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValue - this.minValue)];
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([0, this.height]);
   }
 
   get xScale(): d3.ScaleLinear<number, number> {
     const domain = this.state.xValueRange || [this.minValueX, this.maxValueX];
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
   }
@@ -561,7 +547,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.options.axis.y.invert === true) {
       domain = reverse(domain);
     }
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
   }
@@ -639,10 +625,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   get axisBottomWithTicks(): d3.Axis<number | Date | { valueOf(): number }> {
     // TODO: find a better way
     if(this.options.renderTicksfromTimestamps === true) {
-      return this._d3.axisBottom(this.xScale)
+      return this.d3.axisBottom(this.xScale)
         .tickValues(this.series[0].datapoints.map(d => new Date(d[1])));
     }
-    return this._d3.axisBottom(this.xScale).ticks(this.ticksCount);
+    return this.d3.axisBottom(this.xScale).ticks(this.ticksCount);
   }
 
   get ticksCount(): d3.TimeInterval | number {
@@ -665,23 +651,23 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   getd3TimeRangeEvery(count: number): d3.TimeInterval {
     if(this.options.timeInterval === undefined || this.options.timeInterval.timeFormat === undefined) {
-      return this._d3.timeMinute.every(count);
+      return this.d3.timeMinute.every(count);
     }
     switch(this.options.timeInterval.timeFormat) {
       case TimeFormat.SECOND:
-        return this._d3.utcSecond.every(count);
+        return this.d3.utcSecond.every(count);
       case TimeFormat.MINUTE:
-        return this._d3.utcMinute.every(count);
+        return this.d3.utcMinute.every(count);
       case TimeFormat.HOUR:
-        return this._d3.utcHour.every(count);
+        return this.d3.utcHour.every(count);
       case TimeFormat.DAY:
-        return this._d3.utcDay.every(count);
+        return this.d3.utcDay.every(count);
       case TimeFormat.MONTH:
-        return this._d3.utcMonth.every(count);
+        return this.d3.utcMonth.every(count);
       case TimeFormat.YEAR:
-        return this._d3.utcYear.every(count);
+        return this.d3.utcYear.every(count);
       default:
-        return this._d3.utcMinute.every(count);
+        return this.d3.utcMinute.every(count);
     }
   }
 
@@ -698,9 +684,9 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     switch(this.options.axis.x.format) {
       case AxisFormat.TIME:
         if(this.options.tickFormat !== undefined && this.options.tickFormat.xAxis !== undefined) {
-          return this._d3.timeFormat(this.options.tickFormat.xAxis);
+          return this.d3.timeFormat(this.options.tickFormat.xAxis);
         }
-        return this._d3.timeFormat('%m/%d %H:%M');
+        return this.d3.timeFormat('%m/%d %H:%M');
       case AxisFormat.NUMERIC:
         return (d) => d;
       case AxisFormat.STRING:
@@ -838,7 +824,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   isOutOfChart(): boolean {
-    const event = this._d3.mouse(this.chartContainer.node());
+    const event = this.d3.mouse(this.chartContainer.node());
     const eventX = event[0];
     const eventY = event[1];
     if(

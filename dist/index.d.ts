@@ -4,9 +4,8 @@ import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientatio
 import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
-    private readonly _d3;
-    private readonly _el;
-    private readonly _series;
+    protected readonly el: HTMLElement;
+    protected readonly series: T[];
     protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -18,8 +17,9 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected isPanning: boolean;
     protected isBrushing: boolean;
     private _clipPathUID;
-    private readonly _options;
-    constructor(_d3: typeof d3, _el: HTMLElement, _series: T[], _options: O);
+    protected readonly options: O;
+    protected readonly d3: typeof d3;
+    constructor(_d3: typeof d3, el: HTMLElement, series: T[], _options: O);
     render(): void;
     protected abstract renderMetrics(): void;
     protected abstract onMouseOver(): void;
@@ -28,10 +28,6 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     abstract renderSharedCrosshair(timestamp: number): void;
     abstract hideSharedCrosshair(): void;
     protected initPodState(): void;
-    protected get series(): T[];
-    protected get options(): O;
-    protected get d3(): typeof d3;
-    protected get el(): HTMLElement;
     protected renderSvg(): void;
     protected renderGrid(): void;
     protected renderXAxis(): void;
