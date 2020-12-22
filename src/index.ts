@@ -23,6 +23,7 @@ import add from 'lodash/add';
 import replace from 'lodash/replace';
 import reverse from 'lodash/reverse';
 import sortBy from 'lodash/sortBy';
+import cloneDeep from 'lodash/cloneDeep';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -74,23 +75,29 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected clipPath?: any;
   protected isPanning = false;
   protected isBrushing = false;
-  private clipPathUID = '';
+  private _clipPathUID = '';
+  protected readonly options: O;
+  protected readonly d3: typeof d3;
 
   constructor(
     // maybe it's not the best idea
-    protected _d3: typeof d3,
-    el: HTMLElement,
-    protected _series: T[] = [],
-    protected readonly _options: O
+    _d3: typeof d3,
+    protected readonly el: HTMLElement,
+    protected readonly series: T[] = [],
+    _options: O
   ) {
     // TODO: test if it's necessary
     styles.use();
 
+    let options = cloneDeep(_options);
     // TODO: update defaults(we have defaults for option: { foo: ..., bar: ... }, user pass option: { foo: ... }, so bar has no defaults)
-    defaults(this._options, DEFAULT_OPTIONS);
+    defaults(options, DEFAULT_OPTIONS);
+    this.options = options;
+    this.d3 = _d3;
+
     // TODO: mb move it to render();
     this.initPodState();
-    this.d3Node = this._d3.select(el);
+    this.d3Node = this.d3.select(this.el);
   }
 
   public render(): void {
@@ -119,7 +126,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   public abstract hideSharedCrosshair(): void;
 
   protected initPodState() {
-    this.state = new PodState(this._options);
+    this.state = new PodState(this.options);
   }
 
   protected renderSvg(): void {
@@ -135,7 +142,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderGrid(): void {
-    if(this._options.renderGrid === false) {
+    if(this.options.renderGrid === false) {
       return;
     }
     this.chartContainer.selectAll('.grid').remove();
@@ -154,7 +161,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .append('g')
       .attr('class', 'grid')
       .call(
-        this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this.d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
           .tickSize(-this.width)
           .tickFormat(() => '')
       );
@@ -167,7 +174,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderXAxis(): void {
-    if(this._options.renderXaxis === false) {
+    if(this.options.renderXaxis === false) {
       return;
     }
     this.chartContainer.select('#x-axis-container').remove();
@@ -185,7 +192,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderYAxis(): void {
-    if(this._options.renderYaxis === false) {
+    if(this.options.renderYaxis === false) {
       return;
     }
     this.chartContainer.select('#y-axis-container').remove();
@@ -194,13 +201,13 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .attr('id', 'y-axis-container')
       // TODO: number of ticks shouldn't be hardcoded
       .call(
-        this._d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
+        this.d3.axisLeft(this.yScale).ticks(DEFAULT_TICK_COUNT)
           .tickSize(2)
       );
   }
 
   protected renderCrosshair(): void {
-    if(this._options.renderYaxis === false) {
+    if(this.options.renderYaxis === false) {
       return;
     }
     this.crosshair = this.chartContainer.append('g')
@@ -208,28 +215,28 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .style('display', 'none');
 
     if(
-      this._options.crosshair.orientation === CrosshairOrientation.VERTICAL ||
-      this._options.crosshair.orientation === CrosshairOrientation.BOTH
+      this.options.crosshair.orientation === CrosshairOrientation.VERTICAL ||
+      this.options.crosshair.orientation === CrosshairOrientation.BOTH
     ) {
       this.crosshair.append('line')
         .attr('class', 'crosshair-line')
         .attr('id', 'crosshair-line-x')
-        .attr('fill', this._options.crosshair.color)
-        .attr('stroke', this._options.crosshair.color)
+        .attr('fill', this.options.crosshair.color)
+        .attr('stroke', this.options.crosshair.color)
         .attr('stroke-width', '1px')
         .attr('y1', 0)
         .attr('y2', this.height)
         .style('pointer-events', 'none');
     }
     if(
-      this._options.crosshair.orientation === CrosshairOrientation.HORIZONTAL ||
-      this._options.crosshair.orientation === CrosshairOrientation.BOTH
+      this.options.crosshair.orientation === CrosshairOrientation.HORIZONTAL ||
+      this.options.crosshair.orientation === CrosshairOrientation.BOTH
     ) {
       this.crosshair.append('line')
         .attr('class', 'crosshair-line')
         .attr('id', 'crosshair-line-y')
-        .attr('fill', this._options.crosshair.color)
-        .attr('stroke', this._options.crosshair.color)
+        .attr('fill', this.options.crosshair.color)
+        .attr('stroke', this.options.crosshair.color)
         .attr('stroke-width', '1px')
         .attr('x1', 0)
         .attr('x2', this.width)
@@ -238,35 +245,35 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected useBrush(): void {
-    if(this._options.zoom === undefined || this._options.zoom.type !== ZoomType.BRUSH) {
+    if(this.options.zoom === undefined || this.options.zoom.type !== ZoomType.BRUSH) {
       return;
     }
-    switch(this._options.zoom.orientation) {
+    switch(this.options.zoom.orientation) {
       case ZoomOrientation.VERTICAL:
-        this.brush = this._d3.brushY();
+        this.brush = this.d3.brushY();
         break;
       case ZoomOrientation.HORIZONTAL:
-        this.brush = this._d3.brushX();
+        this.brush = this.d3.brushX();
         break;
       case ZoomOrientation.BOTH:
-        this.brush = this._d3.brush();
+        this.brush = this.d3.brush();
         break;
       default:
-        this.brush = this._d3.brushX();
+        this.brush = this.d3.brushX();
     }
     this.brush.extent([
         [0, 0],
         [this.width, this.height]
       ])
       .handleSize(20)
-      .filter(() => !this._d3.event.shiftKey)
+      .filter(() => !this.d3.event.shiftKey)
       .on('start', this.onBrushStart.bind(this))
       .on('end', this.onBrushEnd.bind(this))
 
-    const pan = this._d3.zoom()
-      .filter(() => this._d3.event.shiftKey)
+    const pan = this.d3.zoom()
+      .filter(() => this.d3.event.shiftKey)
       .on('zoom', () => {
-        this.onPanningZoom(this._d3.event);
+        this.onPanningZoom(this.d3.event);
       })
       .on('end', () => {
         this.onPanningEnd();
@@ -279,16 +286,16 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .on('mousemove', this.onMouseMove.bind(this))
       .on('dblclick', this.zoomOut.bind(this));
 
-    if(this._options.usePanning === true) {
+    if(this.options.usePanning === true) {
       this.chartContainer.call(pan);
     }
   }
 
   protected useScrollZoom(): void {
-    if(this._options.zoom.type !== ZoomType.SCROLL) {
+    if(this.options.zoom.type !== ZoomType.SCROLL) {
       return;
     }
-    this.zoom = this._d3.zoom();
+    this.zoom = this.d3.zoom();
     this.zoom
       .scaleExtent([0.5, Infinity])
       .on('zoom', this.scrollZoomed.bind(this));
@@ -307,15 +314,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected renderLegend(): void {
-    if(this._options.renderLegend === false) {
+    if(this.options.renderLegend === false) {
       return;
     }
-    if(this._series.length > 0) {
+    if(this.series.length > 0) {
       let legendRow = this.chartContainer
         .append('g')
         .attr('class', 'legend-row');
-      for(let idx = 0; idx < this._series.length; idx++) {
-        if(includes(this.seriesTargetsWithBounds, this._series[idx].target)) {
+      for(let idx = 0; idx < this.series.length; idx++) {
+        if(includes(this.seriesTargetsWithBounds, this.series[idx].target)) {
           continue;
         }
         let node = legendRow.selectAll('text').node();
@@ -324,7 +331,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
           rowWidth = legendRow.node().getBBox().width + 25;
         }
 
-        const isChecked = this._series[idx].visible !== false;
+        const isChecked = this.series[idx].visible !== false;
         legendRow.append('foreignObject')
           .attr('x', rowWidth)
           .attr('y', this.legendRowPositionY - 12)
@@ -332,7 +339,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
           .attr('height', 15)
           .html(`<form><input type=checkbox ${isChecked? 'checked' : ''} /></form>`)
           .on('click', () => {
-            this._options.eventsCallbacks.onLegendClick(idx);
+            this.options.eventsCallbacks.onLegendClick(idx);
           });
 
         legendRow.append('text')
@@ -341,16 +348,16 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
           .attr('class', `metric-legend-${idx}`)
           .style('font-size', '12px')
           .style('fill', this.getSerieColor(idx))
-          .text(this._series[idx].target)
+          .text(this.series[idx].target)
           .on('click', () => {
-            this._options.eventsCallbacks.onLegendLabelClick(idx);
+            this.options.eventsCallbacks.onLegendLabelClick(idx);
           });
       }
     }
   }
 
   protected renderYLabel(): void {
-    if(this._options.labelFormat === undefined || this._options.labelFormat.yAxis === undefined) {
+    if(this.options.labelFormat === undefined || this.options.labelFormat.yAxis === undefined) {
       return;
     }
     this.chartContainer.append('text')
@@ -362,15 +369,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .style('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', 'currentColor')
-      .text(this._options.labelFormat.yAxis);
+      .text(this.options.labelFormat.yAxis);
   }
 
   protected renderXLabel(): void {
-    if(this._options.labelFormat === undefined || this._options.labelFormat.xAxis === undefined) {
+    if(this.options.labelFormat === undefined || this.options.labelFormat.xAxis === undefined) {
       return;
     }
     let yPosition = this.height + this.margin.top + this.margin.bottom - 35;
-    if(this._series.length === 0) {
+    if(this.series.length === 0) {
       yPosition += 20;
     }
     this.chartContainer.append('text')
@@ -380,7 +387,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       .style('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', 'currentColor')
-      .text(this._options.labelFormat.xAxis);
+      .text(this.options.labelFormat.xAxis);
   }
 
   protected renderNoDataPointsMessage(): void {
@@ -399,7 +406,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     const signX = Math.sign(event.transform.x);
     // @ts-ignore
     let signY = Math.sign(event.transform.y);
-    if(this._options.axis.y.invert === true) {
+    if(this.options.axis.y.invert === true) {
       signY = -signY; // inversed, because d3 y-axis goes from top to bottom
     }
     const transformX = this.absXScale.invert(Math.abs(event.transform.x));
@@ -410,7 +417,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     // Here we use Zoom option, to determine witch axis will be panned. Options should be refactored
     let translateX = 0;
     let translateY = 0;
-    switch (this._options.zoom.orientation) {
+    switch (this.options.zoom.orientation) {
       case ZoomOrientation.HORIZONTAL:
         this.state.xValueRange = [(this.minValueX - signX * transformX) / scale, (this.maxValueX - signX * transformX) / scale];
         translateX = event.transform.x;
@@ -438,8 +445,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected onPanningEnd(): void {
     this.isPanning = false;
     this.onMouseOut();
-    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.panningEnd !== undefined) {
-      this._options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange]);
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.panningEnd !== undefined) {
+      this.options.eventsCallbacks.panningEnd([this.state.xValueRange, this.state.yValueRange]);
     } else {
       console.log('on panning end, but there is no callback');
     }
@@ -452,7 +459,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected onBrushEnd(): void {
-    const extent = this._d3.event.selection;
+    const extent = this.d3.event.selection;
     this.isBrushing === false;
     if(extent === undefined || extent === null || extent.length < 2) {
       return;
@@ -462,7 +469,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
     let xRange: [number, number];
     let yRange: [number, number];
-    switch(this._options.zoom.orientation) {
+    switch(this.options.zoom.orientation) {
       case ZoomOrientation.HORIZONTAL:
         const startTimestamp = this.xScale.invert(extent[0]);
         const endTimestamp = this.xScale.invert(extent[1]);
@@ -490,15 +497,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
         this.state.yValueRange = yRange;
     }
 
-    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomIn !== undefined) {
-      this._options.eventsCallbacks.zoomIn([xRange, yRange]);
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.zoomIn !== undefined) {
+      this.options.eventsCallbacks.zoomIn([xRange, yRange]);
     } else {
       console.log('zoom in, but there is no callback');
     }
   }
 
   protected scrollZoomed(): void {
-    this.chartContainer.selectAll('.scorecard').attr('transform', this._d3.event.transform);
+    this.chartContainer.selectAll('.scorecard').attr('transform', this.d3.event.transform);
   }
 
   protected zoomOut(): void {
@@ -506,8 +513,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
       return;
     }
     let xAxisMiddleValue = this.xScale.invert(this.width / 2);
-    if(this._options.eventsCallbacks !== undefined && this._options.eventsCallbacks.zoomOut !== undefined) {
-      this._options.eventsCallbacks.zoomOut(xAxisMiddleValue as number);
+    if(this.options.eventsCallbacks !== undefined && this.options.eventsCallbacks.zoomOut !== undefined) {
+      this.options.eventsCallbacks.zoomOut(xAxisMiddleValue as number);
     } else {
       console.log('zoom out, but there is no callback');
     }
@@ -515,21 +522,21 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   get absXScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValueX - this.minValueX)];
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
   }
 
   get absYScale(): d3.ScaleLinear<number, number> {
     const domain = [0, Math.abs(this.maxValue - this.minValue)];
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([0, this.height]);
   }
 
   get xScale(): d3.ScaleLinear<number, number> {
     const domain = this.state.xValueRange || [this.minValueX, this.maxValueX];
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([0, this.width]);
   }
@@ -537,10 +544,10 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   get yScale(): d3.ScaleLinear<number, number> {
     let domain = this.state.yValueRange || [this.maxValue, this.minValue];
     domain = sortBy(domain) as [number, number];
-    if(this._options.axis.y.invert === true) {
+    if(this.options.axis.y.invert === true) {
       domain = reverse(domain);
     }
-    return this._d3.scaleLinear()
+    return this.d3.scaleLinear()
       .domain(domain)
       .range([this.height, 0]); // inversed, because d3 y-axis goes from top to bottom
   }
@@ -550,11 +557,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
-    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
-      return min(this._options.axis.y.range)
+    if(this.options.axis.y !== undefined && this.options.axis.y.range !== undefined) {
+      return min(this.options.axis.y.range)
     }
     const minValue = min(
-      this._series
+      this.series
         .filter(serie => serie.visible !== false)
         .map(
           serie => minBy<number[]>(serie.datapoints, dp => dp[0])[0]
@@ -568,11 +575,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[1];
     }
-    if(this._options.axis.y !== undefined && this._options.axis.y.range !== undefined) {
-      return max(this._options.axis.y.range)
+    if(this.options.axis.y !== undefined && this.options.axis.y.range !== undefined) {
+      return max(this.options.axis.y.range)
     }
     const maxValue = max(
-      this._series
+      this.series
         .filter(serie => serie.visible !== false)
         .map(
           serie => maxBy<number[]>(serie.datapoints, dp => dp[0])[0]
@@ -585,11 +592,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[0];
     }
-    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
-      return min(this._options.axis.x.range)
+    if(this.options.axis.x !== undefined && this.options.axis.x.range !== undefined) {
+      return min(this.options.axis.x.range)
     }
     const minValue = min(
-      this._series
+      this.series
         .filter(serie => serie.visible !== false)
         .map(
           serie => minBy<number[]>(serie.datapoints, dp => dp[1])[1]
@@ -602,11 +609,11 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     if(this.isSeriesUnavailable) {
       return DEFAULT_AXIS_RANGE[1];
     }
-    if(this._options.axis.x !== undefined && this._options.axis.x.range !== undefined) {
-      return max(this._options.axis.x.range)
+    if(this.options.axis.x !== undefined && this.options.axis.x.range !== undefined) {
+      return max(this.options.axis.x.range)
     }
     const maxValue = max(
-      this._series
+      this.series
         .filter(serie => serie.visible !== false)
         .map(
           serie => maxBy<number[]>(serie.datapoints, dp => dp[1])[1]
@@ -617,95 +624,95 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   get axisBottomWithTicks(): d3.Axis<number | Date | { valueOf(): number }> {
     // TODO: find a better way
-    if(this._options.renderTicksfromTimestamps === true) {
-      return this._d3.axisBottom(this.xScale)
-        .tickValues(this._series[0].datapoints.map(d => new Date(d[1])));
+    if(this.options.renderTicksfromTimestamps === true) {
+      return this.d3.axisBottom(this.xScale)
+        .tickValues(this.series[0].datapoints.map(d => new Date(d[1])));
     }
-    return this._d3.axisBottom(this.xScale).ticks(this.ticksCount);
+    return this.d3.axisBottom(this.xScale).ticks(this.ticksCount);
   }
 
   get ticksCount(): d3.TimeInterval | number {
-    if(this._options.timeInterval === undefined || this._options.timeInterval.count === undefined) {
+    if(this.options.timeInterval === undefined || this.options.timeInterval.count === undefined) {
       return 5;
     }
     // TODO: add max ticks limit
-    switch(this._options.axis.x.format) {
+    switch(this.options.axis.x.format) {
       case AxisFormat.TIME:
-        return this.getd3TimeRangeEvery(this._options.timeInterval.count);;
+        return this.getd3TimeRangeEvery(this.options.timeInterval.count);;
       case AxisFormat.NUMERIC:
         // TODO: find a better way
-        return this._options.timeInterval.count;
+        return this.options.timeInterval.count;
       case AxisFormat.STRING:
       // TODO: add string/symbol format
       default:
-        throw new Error(`Unknown time format for x-axis: ${this._options.axis.x.format}`);
+        throw new Error(`Unknown time format for x-axis: ${this.options.axis.x.format}`);
     }
   }
 
   getd3TimeRangeEvery(count: number): d3.TimeInterval {
-    if(this._options.timeInterval === undefined || this._options.timeInterval.timeFormat === undefined) {
-      return this._d3.timeMinute.every(count);
+    if(this.options.timeInterval === undefined || this.options.timeInterval.timeFormat === undefined) {
+      return this.d3.timeMinute.every(count);
     }
-    switch(this._options.timeInterval.timeFormat) {
+    switch(this.options.timeInterval.timeFormat) {
       case TimeFormat.SECOND:
-        return this._d3.utcSecond.every(count);
+        return this.d3.utcSecond.every(count);
       case TimeFormat.MINUTE:
-        return this._d3.utcMinute.every(count);
+        return this.d3.utcMinute.every(count);
       case TimeFormat.HOUR:
-        return this._d3.utcHour.every(count);
+        return this.d3.utcHour.every(count);
       case TimeFormat.DAY:
-        return this._d3.utcDay.every(count);
+        return this.d3.utcDay.every(count);
       case TimeFormat.MONTH:
-        return this._d3.utcMonth.every(count);
+        return this.d3.utcMonth.every(count);
       case TimeFormat.YEAR:
-        return this._d3.utcYear.every(count);
+        return this.d3.utcYear.every(count);
       default:
-        return this._d3.utcMinute.every(count);
+        return this.d3.utcMinute.every(count);
     }
   }
 
   get serieTimestampRange(): number | undefined {
-    if(this._series.length === 0) {
+    if(this.series.length === 0) {
       return undefined;
     }
-    const startTimestamp = first(this._series[0].datapoints)[1];
-    const endTimestamp = last(this._series[0].datapoints)[1];
+    const startTimestamp = first(this.series[0].datapoints)[1];
+    const endTimestamp = last(this.series[0].datapoints)[1];
     return (endTimestamp - startTimestamp) / 1000;
   }
 
   get xAxisTicksFormat() {
-    switch(this._options.axis.x.format) {
+    switch(this.options.axis.x.format) {
       case AxisFormat.TIME:
-        if(this._options.tickFormat !== undefined && this._options.tickFormat.xAxis !== undefined) {
-          return this._d3.timeFormat(this._options.tickFormat.xAxis);
+        if(this.options.tickFormat !== undefined && this.options.tickFormat.xAxis !== undefined) {
+          return this.d3.timeFormat(this.options.tickFormat.xAxis);
         }
-        return this._d3.timeFormat('%m/%d %H:%M');
+        return this.d3.timeFormat('%m/%d %H:%M');
       case AxisFormat.NUMERIC:
         return (d) => d;
       case AxisFormat.STRING:
         // TODO: add string/symbol format
       default:
-        throw new Error(`Unknown time format for x-axis: ${this._options.axis.x.format}`);
+        throw new Error(`Unknown time format for x-axis: ${this.options.axis.x.format}`);
     }
   }
 
   get timeInterval(): number {
-    if(this._series !== undefined && this._series.length > 0 && this._series[0].datapoints.length > 1) {
-      const interval = this._series[0].datapoints[1][1] - this._series[0].datapoints[0][1];
+    if(this.series !== undefined && this.series.length > 0 && this.series[0].datapoints.length > 1) {
+      const interval = this.series[0].datapoints[1][1] - this.series[0].datapoints[0][1];
       return interval;
     }
-    if(this._options.timeInterval !== undefined && this._options.timeInterval.count !== undefined) {
+    if(this.options.timeInterval !== undefined && this.options.timeInterval.count !== undefined) {
       //TODO: timeFormat to timestamp
-      return this._options.timeInterval.count * MILISECONDS_IN_MINUTE;
+      return this.options.timeInterval.count * MILISECONDS_IN_MINUTE;
     }
     return MILISECONDS_IN_MINUTE;
   }
 
   get xTickTransform(): string {
-    if(this._options.tickFormat === undefined || this._options.tickFormat.xTickOrientation === undefined) {
+    if(this.options.tickFormat === undefined || this.options.tickFormat.xTickOrientation === undefined) {
       return '';
     }
-    switch (this._options.tickFormat.xTickOrientation) {
+    switch (this.options.tickFormat.xTickOrientation) {
       case TickOrientation.VERTICAL:
         return 'translate(-10px, 50px) rotate(-90deg)';
       case TickOrientation.HORIZONTAL:
@@ -719,8 +726,8 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
 
   get extraMargin(): Margin {
     let optionalMargin = { top: 0, right: 0, bottom: 0, left: 0 };
-    if(this._options.tickFormat !== undefined && this._options.tickFormat.xTickOrientation !== undefined) {
-      switch (this._options.tickFormat.xTickOrientation) {
+    if(this.options.tickFormat !== undefined && this.options.tickFormat.xTickOrientation !== undefined) {
+      switch (this.options.tickFormat.xTickOrientation) {
         case TickOrientation.VERTICAL:
           optionalMargin.bottom += 80;
           break;
@@ -733,15 +740,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
           break;
       }
     }
-    if(this._options.labelFormat !== undefined) {
-      if(this._options.labelFormat.xAxis !== undefined && this._options.labelFormat.xAxis.length > 0) {
+    if(this.options.labelFormat !== undefined) {
+      if(this.options.labelFormat.xAxis !== undefined && this.options.labelFormat.xAxis.length > 0) {
         optionalMargin.bottom += 20;
       }
-      if(this._options.labelFormat.yAxis !== undefined && this._options.labelFormat.yAxis.length > 0) {
+      if(this.options.labelFormat.yAxis !== undefined && this.options.labelFormat.yAxis.length > 0) {
         optionalMargin.left += 20;
       }
     }
-    if(this._series.length > 0) {
+    if(this.series.length > 0) {
       optionalMargin.bottom += 25;
     }
     return optionalMargin;
@@ -760,15 +767,15 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   get margin(): Margin {
-    if(this._options.margin !== undefined) {
-      return this._options.margin;
+    if(this.options.margin !== undefined) {
+      return this.options.margin;
     }
     return mergeWith({}, DEFAULT_MARGIN, this.extraMargin, add);
   }
 
   get isSeriesUnavailable(): boolean {
     // TODO: Use one && throw error
-    return this._series === undefined || this._series.length === 0 || this._series[0].datapoints.length === 0;
+    return this.series === undefined || this.series.length === 0 || this.series[0].datapoints.length === 0;
   }
 
   formatedBound(alias: string, target: string): string {
@@ -777,47 +784,47 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   }
 
   protected getSerieColor(idx: number): string {
-    if(this._series[idx] === undefined) {
+    if(this.series[idx] === undefined) {
       throw new Error(
-        `Can't get color for unexisting serie: ${idx}, there are only ${this._series.length} series`
+        `Can't get color for unexisting serie: ${idx}, there are only ${this.series.length} series`
       );
     }
-    let serieColor = this._series[idx].color;
+    let serieColor = this.series[idx].color;
     if(serieColor === undefined) {
       serieColor = palette[idx % palette.length];
     }
     return serieColor;
   }
 
-  get seriesTargetsWithBounds(): any[] {
+  protected get seriesTargetsWithBounds(): any[] {
     if(
-      this._options.bounds === undefined ||
-      this._options.bounds.upper === undefined ||
-      this._options.bounds.lower === undefined
+      this.options.bounds === undefined ||
+      this.options.bounds.upper === undefined ||
+      this.options.bounds.lower === undefined
     ) {
       return [];
     }
     let series = [];
-    this._series.forEach(serie => {
-      series.push(this.formatedBound(this._options.bounds.upper, serie.target));
-      series.push(this.formatedBound(this._options.bounds.lower, serie.target));
+    this.series.forEach(serie => {
+      series.push(this.formatedBound(this.options.bounds.upper, serie.target));
+      series.push(this.formatedBound(this.options.bounds.lower, serie.target));
     });
     return series;
   }
 
-  get visibleSeries(): any[] {
-    return this._series.filter(serie => serie.visible !== false);
+  protected get visibleSeries(): any[] {
+    return this.series.filter(serie => serie.visible !== false);
   }
 
-  get rectClipId(): string {
-    if(this.clipPathUID.length === 0) {
-      this.clipPathUID = uid();
+  protected get rectClipId(): string {
+    if(this._clipPathUID.length === 0) {
+      this._clipPathUID = uid();
     }
-    return this.clipPathUID;
+    return this._clipPathUID;
   }
 
   isOutOfChart(): boolean {
-    const event = this._d3.mouse(this.chartContainer.node());
+    const event = this.d3.mouse(this.chartContainer.node());
     const eventX = event[0];
     const eventY = event[1];
     if(
