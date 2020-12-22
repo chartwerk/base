@@ -23,6 +23,7 @@ import add from 'lodash/add';
 import replace from 'lodash/replace';
 import reverse from 'lodash/reverse';
 import sortBy from 'lodash/sortBy';
+import cloneDeep from 'lodash/cloneDeep';
 
 
 const DEFAULT_MARGIN: Margin = { top: 30, right: 20, bottom: 20, left: 30 };
@@ -75,22 +76,26 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
   protected isPanning = false;
   protected isBrushing = false;
   private _clipPathUID = '';
+  private readonly _options: O;
 
   constructor(
     // maybe it's not the best idea
     private readonly _d3: typeof d3,
     private readonly _el: HTMLElement,
     private readonly _series: T[] = [],
-    private readonly _options: O
+    _options: O
   ) {
     // TODO: test if it's necessary
     styles.use();
 
+    let options = cloneDeep(_options);
     // TODO: update defaults(we have defaults for option: { foo: ..., bar: ... }, user pass option: { foo: ... }, so bar has no defaults)
-    defaults(this._options, DEFAULT_OPTIONS);
+    defaults(options, DEFAULT_OPTIONS);
+    this._options = options;
+
     // TODO: mb move it to render();
     this.initPodState();
-    this.d3Node = this._d3.select(_el);
+    this.d3Node = this._d3.select(this._el);
   }
 
   public render(): void {
@@ -130,7 +135,7 @@ abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     return this._options;
   }
 
-  protected get podD3(): typeof d3 {
+  protected get d3(): typeof d3 {
     return this._d3;
   }
 
