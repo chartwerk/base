@@ -4,9 +4,10 @@ import { Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientatio
 import { palette } from './colors';
 import * as d3 from 'd3';
 declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
-    protected _d3: typeof d3;
-    protected _series: T[];
-    protected readonly _options: O;
+    private readonly _d3;
+    private readonly _el;
+    private readonly _series;
+    private readonly _options;
     protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -17,8 +18,8 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected clipPath?: any;
     protected isPanning: boolean;
     protected isBrushing: boolean;
-    private clipPathUID;
-    constructor(_d3: typeof d3, el: HTMLElement, _series: T[], _options: O);
+    private _clipPathUID;
+    constructor(_d3: typeof d3, _el: HTMLElement, _series: T[], _options: O);
     render(): void;
     protected abstract renderMetrics(): void;
     protected abstract onMouseOver(): void;
@@ -27,6 +28,10 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     abstract renderSharedCrosshair(timestamp: number): void;
     abstract hideSharedCrosshair(): void;
     protected initPodState(): void;
+    protected get series(): T[];
+    protected get options(): O;
+    protected get podD3(): typeof d3;
+    protected get el(): HTMLElement;
     protected renderSvg(): void;
     protected renderGrid(): void;
     protected renderXAxis(): void;
@@ -70,9 +75,9 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     get isSeriesUnavailable(): boolean;
     formatedBound(alias: string, target: string): string;
     protected getSerieColor(idx: number): string;
-    get seriesTargetsWithBounds(): any[];
-    get visibleSeries(): any[];
-    get rectClipId(): string;
+    protected get seriesTargetsWithBounds(): any[];
+    protected get visibleSeries(): any[];
+    protected get rectClipId(): string;
     isOutOfChart(): boolean;
 }
 export { ChartwerkPod, VueChartwerkPodMixin, Margin, TimeSerie, Options, TickOrientation, TimeFormat, ZoomOrientation, ZoomType, AxisFormat, palette };
