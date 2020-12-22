@@ -7,7 +7,6 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     private readonly _d3;
     private readonly _el;
     private readonly _series;
-    private readonly _options;
     protected d3Node?: d3.Selection<HTMLElement, unknown, null, undefined>;
     protected chartContainer?: d3.Selection<SVGGElement, unknown, null, undefined>;
     protected crosshair?: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -19,6 +18,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected isPanning: boolean;
     protected isBrushing: boolean;
     private _clipPathUID;
+    private readonly _options;
     constructor(_d3: typeof d3, _el: HTMLElement, _series: T[], _options: O);
     render(): void;
     protected abstract renderMetrics(): void;
@@ -30,7 +30,7 @@ declare abstract class ChartwerkPod<T extends TimeSerie, O extends Options> {
     protected initPodState(): void;
     protected get series(): T[];
     protected get options(): O;
-    protected get podD3(): typeof d3;
+    protected get d3(): typeof d3;
     protected get el(): HTMLElement;
     protected renderSvg(): void;
     protected renderGrid(): void;
