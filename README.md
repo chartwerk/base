@@ -1,3 +1,6 @@
+# DEPRECATED, goto https://github.com/chartwerk/core
+
+
 # Chartwerk Pod
 
 Plugin with an abstract class providing basics for visualization.
